@@ -60,5 +60,4 @@ struct _NautilusWindowPane {
 
 GType nautilus_window_pane_get_type (void);
 
-
 #endif /* NAUTILUS_WINDOW_PANE_H */

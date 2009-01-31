@@ -36,6 +36,8 @@
 #define NAUTILUS_IS_WINDOW_SLOT_CLASS(k)  (G_TYPE_CHECK_CLASS_TYPE ((k), NAUTILUS_TYPE_WINDOW_SLOT))
 #define NAUTILUS_WINDOW_SLOT_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), NAUTILUS_TYPE_WINDOW_SLOT, NautilusWindowSlotClass))
 
+struct _NautilusWindowPane;
+
 typedef enum {
 	NAUTILUS_LOCATION_CHANGE_STANDARD,
 	NAUTILUS_LOCATION_CHANGE_BACK,
@@ -65,7 +67,7 @@ struct NautilusWindowSlotClass {
 struct NautilusWindowSlot {
 	GObject parent;
 
-	NautilusWindow *window;
+	struct _NautilusWindowPane *pane;
 
 	/* content_box contains
  	 *  1) an event box containing extra_location_widgets

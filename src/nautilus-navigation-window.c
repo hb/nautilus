@@ -219,7 +219,7 @@ notebook_tab_close_requested (NautilusNotebook *notebook,
 			      NautilusWindowSlot *slot,
 			      NautilusWindow *window)
 {
-	g_assert (slot->window == window);
+	g_assert (slot->pane->window == window);
 	nautilus_window_slot_close (slot);
 }
 
@@ -352,8 +352,16 @@ nautilus_navigation_window_init (NautilusNavigationWindow *window)
 	GtkWidget *view_as_menu_vbox;
 	GtkToolItem *item;
 	GtkWidget *hbox;
+	NautilusWindow *win;
+	NautilusWindowPane *pane;
 
+	win = NAUTILUS_WINDOW(window);
+	
 	window->details = G_TYPE_INSTANCE_GET_PRIVATE (window, NAUTILUS_TYPE_NAVIGATION_WINDOW, NautilusNavigationWindowDetails);
+
+	pane = (NautilusWindowPane*) g_object_new(NAUTILUS_TYPE_WINDOW_PANE, NULL);
+	pane->window = win;
+	win->details->panes = g_list_prepend(win->details->panes, pane);
 
 	window->details->content_paned = nautilus_horizontal_splitter_new ();
 	gtk_table_attach (GTK_TABLE (NAUTILUS_WINDOW (window)->details->table),
@@ -511,6 +519,8 @@ nautilus_navigation_window_init (NautilusNavigationWindow *window)
 			  0, 1,                                2, 3,
 			  GTK_EXPAND | GTK_FILL | GTK_SHRINK,  0,
 			  0,                                   0);
+
+	nautilus_window_set_active_pane (win, NAUTILUS_WINDOW_PANE (pane));
 
 	eel_preferences_add_callback_while_alive (NAUTILUS_PREFERENCES_ALWAYS_USE_LOCATION_ENTRY,
 						  always_use_location_entry_changed,
@@ -2008,7 +2018,8 @@ real_open_slot (NautilusWindow *window,
 	notebook = NAUTILUS_NOTEBOOK (navigation_window->notebook);
 
 	slot = (NautilusWindowSlot *) g_object_new (NAUTILUS_TYPE_NAVIGATION_WINDOW_SLOT, NULL);
-	slot->window = window;
+	
+	slot->pane = window->details->active_pane;
 
 	g_signal_handlers_block_by_func (notebook,
 					 G_CALLBACK (notebook_switch_page_cb),

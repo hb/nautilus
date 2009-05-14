@@ -20,8 +20,6 @@ EXTRA_DIST=					\
 	HACKING					\
 	MAINTAINERS				\
 	README.commits				\
-	nautilus.desktop			\
-	nautilus.desktop.in			\
 	ChangeLog-20000414			\
 	ChangeLog-20000625			\
 	ChangeLog-20000831			\
@@ -43,6 +41,8 @@ DISTCLEANFILES = \
   intltool-update
 
 DISTCHECK_CONFIGURE_FLAGS = --disable-update-mimedb --enable-gtk-doc
+
+ACLOCAL_AMFLAGS = -I m4
 
 distclean-local:
 	if test $(srdcir) = .; then :; else \

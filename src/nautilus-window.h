@@ -65,6 +65,8 @@ typedef enum NautilusWindowOpenSlotFlags NautilusWindowOpenSlotFlags;
 
 GType          nautilus_window_slot_get_type (void);
 
+struct _NautilusWindowPane;
+
 typedef enum {
         NAUTILUS_WINDOW_NOT_SHOWN,
         NAUTILUS_WINDOW_POSITION_SET,
@@ -105,11 +107,11 @@ typedef struct {
         void   (* show_window)  (NautilusWindow *window);
         void   (* close) (NautilusWindow *window);
 
-        NautilusWindowSlot * (* open_slot) (NautilusWindow *window,
+        NautilusWindowSlot * (* open_slot) (struct _NautilusWindowPane *pane,
 					    NautilusWindowOpenSlotFlags flags);
-        void                 (* close_slot) (NautilusWindow *window,
+        void                 (* close_slot) (struct _NautilusWindowPane *pane,
 					     NautilusWindowSlot *slot);
-        void                 (* set_active_slot) (NautilusWindow *window,
+        void                 (* set_active_slot) (struct _NautilusWindowPane *pane,
 						  NautilusWindowSlot *slot);
 
         /* Signals used only for keybindings */

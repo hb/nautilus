@@ -30,8 +30,10 @@
 #include "nautilus-window.h"
 #include "nautilus-navigation-window.h"
 
-void                    nautilus_window_manage_views_close_slot       (NautilusWindow           *window,
-								       NautilusWindowSlot       *slot);
+struct _NautilusWindowPane;
+
+void nautilus_window_manage_views_close_slot (struct _NautilusWindowPane *pane,
+					      NautilusWindowSlot         *slot);
 
 
 /* NautilusWindowInfo implementation: */

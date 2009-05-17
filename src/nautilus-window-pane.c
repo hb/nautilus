@@ -31,12 +31,14 @@ static void nautilus_window_pane_dispose    (GObject *object);
 G_DEFINE_TYPE (NautilusWindowPane,
                nautilus_window_pane,
                G_TYPE_OBJECT)
-#define parent_class nautilus_window_slot_parent_class
+#define parent_class nautilus_window_pane_parent_class
 
 
 static void
 nautilus_window_pane_init (NautilusWindowPane *pane)
 {
+	pane->slots = NULL;
+	pane->active_slot = NULL;
 }
 
 static void
@@ -50,5 +52,8 @@ nautilus_window_pane_dispose (GObject *object)
 {
   NautilusWindowPane *pane = NAUTILUS_WINDOW_PANE (object);
 
+  /* hhb: TODO: list cleanup */
+
   pane->window = NULL;
+  G_OBJECT_CLASS (parent_class)->dispose (object);
 }

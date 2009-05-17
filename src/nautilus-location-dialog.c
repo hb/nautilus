@@ -212,7 +212,7 @@ nautilus_location_dialog_new (NautilusWindow *window)
 		NAUTILUS_LOCATION_DIALOG (dialog)->details->window = window;
 	}
 
-	slot = window->details->active_slot;
+	slot = window->details->active_pane->active_slot;
 
 	location = slot->location;
 	if (location != NULL) {

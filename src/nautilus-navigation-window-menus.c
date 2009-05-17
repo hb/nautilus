@@ -655,7 +655,7 @@ action_new_tab_callback (GtkAction *action,
 	}
 
 	window = NAUTILUS_WINDOW (user_data);
-	current_slot = window->details->active_slot;
+	current_slot = window->details->active_pane->active_slot;
 	location = nautilus_window_slot_get_location (current_slot);
 
 	window = NAUTILUS_WINDOW (current_slot->pane->window);
@@ -691,7 +691,7 @@ action_folder_window_callback (GtkAction *action,
 	GFile *current_location;
 
 	current_window = NAUTILUS_WINDOW (user_data);
-	slot = current_window->details->active_slot;
+	slot = current_window->details->active_pane->active_slot;
 	current_location = nautilus_window_slot_get_location (slot);
 	nautilus_application_present_spatial_window (
 			current_window->application,

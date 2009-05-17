@@ -1097,7 +1097,7 @@ nautilus_application_get_existing_spatial_window (GFile *location)
 	     l != NULL; l = l->next) {
 		GFile *window_location;
 
-		slot = NAUTILUS_WINDOW (l->data)->details->active_slot;
+		slot = NAUTILUS_WINDOW (l->data)->details->active_pane->active_slot;
 		window_location = slot->location;
 		if (window_location != NULL) {
 			if (g_file_equal (location, window_location)) {
@@ -1116,7 +1116,7 @@ find_parent_spatial_window (NautilusSpatialWindow *window)
 	NautilusWindowSlot *slot;
 	GFile *location;
 
-	slot = NAUTILUS_WINDOW (window)->details->active_slot;
+	slot = NAUTILUS_WINDOW (window)->details->active_pane->active_slot;
 
 	location = slot->location;
 	if (location == NULL) {
@@ -1295,7 +1295,7 @@ nautilus_application_present_spatial_window_with_selection (NautilusApplication 
 		GFile *existing_location;
 
 		existing_window = NAUTILUS_WINDOW (l->data);
-		slot = existing_window->details->active_slot;
+		slot = existing_window->details->active_pane->active_slot;
 		existing_location = slot->pending_location;
 		
 		if (existing_location == NULL) {
@@ -1630,15 +1630,20 @@ mount_removed_callback (GVolumeMonitor *monitor,
 		window = NAUTILUS_WINDOW (node->data);
   		if (window != NULL && window_can_be_closed (window)) {
 			GList *l;
+            GList *lp;
   			GFile *location;
-  
-			for (l = window->details->slots; l != NULL; l = l->next) {
-				slot = l->data;
-				location = slot->location;
-				if (g_file_has_prefix (location, root)) {
-					close_list = g_list_prepend (close_list, slot);
-				} 
-			}
+
+  			for (lp = window->details->panes; lp != NULL; lp = lp->next) {
+  				NautilusWindowPane *pane;
+  				pane = (NautilusWindowPane*) lp->data;
+  				for (l = pane->slots; l != NULL; l = l->next) {
+  					slot = l->data;
+  					location = slot->location;
+  					if (g_file_has_prefix (location, root)) {
+  						close_list = g_list_prepend (close_list, slot);
+  					} 
+  				} /* for all slots */
+  			} /* for all panes */  
 		}
 	}
 

@@ -38,6 +38,7 @@ static void
 nautilus_window_pane_init (NautilusWindowPane *pane)
 {
 	pane->slots = NULL;
+	pane->active_slots = NULL;
 	pane->active_slot = NULL;
 }
 
@@ -52,7 +53,7 @@ nautilus_window_pane_dispose (GObject *object)
 {
   NautilusWindowPane *pane = NAUTILUS_WINDOW_PANE (object);
 
-  /* hhb: TODO: list cleanup */
+  /* hhb: TODO: slot lists cleanup */
 
   pane->window = NULL;
   G_OBJECT_CLASS (parent_class)->dispose (object);

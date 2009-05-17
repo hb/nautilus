@@ -650,7 +650,7 @@ path_bar_location_changed_callback (GtkWidget *widget,
 
 	g_assert (NAUTILUS_IS_NAVIGATION_WINDOW (window));
 
-	slot = NAUTILUS_NAVIGATION_WINDOW_SLOT (NAUTILUS_WINDOW (window)->details->active_slot);
+	slot = NAUTILUS_NAVIGATION_WINDOW_SLOT (NAUTILUS_WINDOW (window)->details->active_pane->active_slot);
 
 	/* check whether we already visited the target location */
 	i = bookmark_list_get_uri_index (slot->back_list, location);
@@ -1167,7 +1167,7 @@ activate_nth_short_list_item (NautilusWindow *window, guint index)
 
 	g_assert (NAUTILUS_IS_WINDOW (window));
 
-	slot = window->details->active_slot;
+	slot = window->details->active_pane->active_slot;
 	g_assert (index < g_list_length (window->details->short_list_viewers));
 
 	nautilus_window_slot_set_content_view (slot,
@@ -1181,7 +1181,7 @@ activate_extra_viewer (NautilusWindow *window)
 
 	g_assert (NAUTILUS_IS_WINDOW (window));
 
-	slot = window->details->active_slot;
+	slot = window->details->active_pane->active_slot;
 	g_assert (window->details->extra_viewer != NULL);
 
 	nautilus_window_slot_set_content_view (slot, window->details->extra_viewer);
@@ -1227,7 +1227,7 @@ load_view_as_menu (NautilusWindow *window)
 	store = GTK_LIST_STORE (model);
 	gtk_list_store_clear (store);
 
-	slot = window->details->active_slot;
+	slot = window->details->active_pane->active_slot;
 
         /* Add a menu item for each view in the preferred list for this location. */
         for (node = window->details->short_list_viewers, index = 0; 
@@ -1278,7 +1278,7 @@ real_sync_title (NautilusWindow *window,
 	EEL_CALL_PARENT (NAUTILUS_WINDOW_CLASS,
 			 sync_title, (window, slot));
 
-	if (slot == window->details->active_slot) {
+	if (slot == window->details->active_pane->active_slot) {
 		full_title = g_strdup_printf (_("%s - File Browser"), slot->title);
 
 		window_title = eel_str_middle_truncate (full_title, MAX_TITLE_LENGTH);
@@ -1496,7 +1496,7 @@ search_bar_activate_callback (NautilusSearchBar *bar,
 
 	query = nautilus_search_bar_get_query (NAUTILUS_SEARCH_BAR (NAUTILUS_NAVIGATION_WINDOW (window)->search_bar));
 	if (query != NULL) {
-		NautilusWindowSlot *slot = window->details->active_slot;
+		NautilusWindowSlot *slot = window->details->active_pane->active_slot;
 		if (!nautilus_search_directory_is_indexed (search_directory)) {
 			current_uri = nautilus_window_slot_get_location_uri (slot);
 			nautilus_query_set_location (query, current_uri);
@@ -1547,7 +1547,7 @@ real_sync_search_widgets (NautilusWindow *window)
 
 	navigation_window = NAUTILUS_NAVIGATION_WINDOW (window);
 
-	slot = window->details->active_slot;
+	slot = window->details->active_pane->active_slot;
 
 	search_directory = NULL;
 
@@ -1578,7 +1578,7 @@ real_sync_zoom_widgets (NautilusWindow *nautilus_window)
 
 	window = NAUTILUS_NAVIGATION_WINDOW (nautilus_window);
 
-	slot = nautilus_window->details->active_slot;
+	slot = nautilus_window->details->active_pane->active_slot;
 	view = slot->content_view;
 
 	EEL_CALL_PARENT (NAUTILUS_WINDOW_CLASS,
@@ -1890,7 +1890,7 @@ nautilus_navigation_window_get_base_page_index (NautilusNavigationWindow *window
 	NautilusNavigationWindowSlot *slot;
 	gint forward_count;
 
-	slot = NAUTILUS_NAVIGATION_WINDOW_SLOT (NAUTILUS_WINDOW (window)->details->active_slot);
+	slot = NAUTILUS_NAVIGATION_WINDOW_SLOT (NAUTILUS_WINDOW (window)->details->active_pane->active_slot);
 
 	forward_count = g_list_length (slot->forward_list); 
 

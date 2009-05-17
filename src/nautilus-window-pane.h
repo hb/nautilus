@@ -60,6 +60,7 @@ struct _NautilusWindowPane {
 	/* available slots, and active slot.
  	 * Both of them may never be NULL. */
 	GList *slots;
+	GList *active_slots;
 	NautilusWindowSlot *active_slot;
 };
 

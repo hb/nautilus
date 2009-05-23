@@ -55,10 +55,16 @@ struct _NautilusNavigationWindowPane {
     GtkWidget *search_bar;
     GtkWidget *zoom_control;
 
-    /* Location bar */
     gboolean temporary_navigation_bar;
     gboolean temporary_location_bar;
-    gboolean temporary_search_bar;    
+    gboolean temporary_search_bar;
+    
+    /* notebook */
+    GtkWidget *notebook;
+    
+	/* tab menu */
+	GtkActionGroup *tabs_menu_action_group;
+	guint tabs_menu_merge_id;    
 };
 
 GType    nautilus_navigation_window_pane_get_type (void);
@@ -83,5 +89,10 @@ void     nautilus_navigation_window_pane_load_view_as_menu (NautilusNavigationWi
 gboolean nautilus_navigation_window_pane_hide_temporary_bars (NautilusNavigationWindowPane *pane);
 void     nautilus_navigation_window_pane_sync_location_widgets (NautilusNavigationWindowPane *pane);
 void     nautilus_navigation_window_pane_set_active (NautilusNavigationWindowPane *pane, gboolean is_active);
+
+/* notebook */
+void     nautilus_navigation_window_pane_setup_notebook (NautilusNavigationWindowPane *pane);
+void     nautilus_navigation_window_pane_add_slot_in_tab (NautilusNavigationWindowPane *pane, NautilusWindowSlot *slot, NautilusWindowOpenSlotFlags flags);
+void     nautilus_navigation_window_pane_remove_page (NautilusNavigationWindowPane *pane, int page_num);
 
 #endif /* NAUTILUS_NAVIGATION_WINDOW_PANE_H */

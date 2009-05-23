@@ -36,6 +36,7 @@
 #include "nautilus-location-entry.h"
 #include "nautilus-window-private.h"
 #include "nautilus-window.h"
+#include "nautilus-navigation-window-pane.h"
 #include <eel/eel-accessibility.h>
 #include <eel/eel-glib-extensions.h>
 #include <eel/eel-gtk-macros.h>
@@ -466,7 +467,7 @@ nautilus_location_bar_init (NautilusLocationBar *bar)
 }
 
 GtkWidget *
-nautilus_location_bar_new (NautilusNavigationWindow *window)
+nautilus_location_bar_new (NautilusNavigationWindowPane *pane)
 {
 	GtkWidget *bar;
 	NautilusLocationBar *location_bar;
@@ -477,7 +478,7 @@ nautilus_location_bar_new (NautilusNavigationWindow *window)
 	/* Clipboard */
 	nautilus_clipboard_set_up_editable
 		(GTK_EDITABLE (location_bar->details->entry),
-		 nautilus_window_get_ui_manager (NAUTILUS_WINDOW (window)),
+		 nautilus_window_get_ui_manager (NAUTILUS_WINDOW (NAUTILUS_WINDOW_PANE(pane)->window)),
 		 TRUE);
 
 	return bar;
@@ -575,4 +576,10 @@ nautilus_location_bar_update_label (NautilusLocationBar *bar)
 
 	g_object_unref (location);
 	g_object_unref (last_location);
+}
+
+NautilusEntry *
+nautilus_location_bar_get_entry (NautilusLocationBar *location_bar)
+{
+	return location_bar->details->entry;
 }

@@ -360,21 +360,21 @@ static void
 action_zoom_in_callback (GtkAction *action, 
 			 gpointer user_data) 
 {
-	nautilus_window_zoom_in (NAUTILUS_WINDOW (user_data));
+	nautilus_window_pane_zoom_in (NAUTILUS_WINDOW (user_data)->details->active_pane);
 }
 
 static void
 action_zoom_out_callback (GtkAction *action, 
 			  gpointer user_data) 
 {
-	nautilus_window_zoom_out (NAUTILUS_WINDOW (user_data));
+	nautilus_window_pane_zoom_out (NAUTILUS_WINDOW (user_data)->details->active_pane);
 }
 
 static void
 action_zoom_normal_callback (GtkAction *action, 
 			     gpointer user_data) 
 {
-	nautilus_window_zoom_to_default (NAUTILUS_WINDOW (user_data));
+	nautilus_window_pane_zoom_to_default (NAUTILUS_WINDOW (user_data)->details->active_pane);
 }
 
 static void

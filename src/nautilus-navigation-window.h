@@ -63,17 +63,10 @@ struct _NautilusNavigationWindow {
         
         /** UI stuff **/
         NautilusSidePane *sidebar;
-        GtkWidget *view_as_combo_box;
-        GtkWidget *navigation_bar;
-	GtkWidget *path_bar;
-        GtkWidget *search_bar;
 	GtkWidget *notebook;
 
         /* Current views stuff */
         GList *sidebar_panels;
-        
-        /* Widgets to keep track of (for state changes, etc) */      
-        GtkWidget *zoom_control;
 };
 
 
@@ -90,18 +83,6 @@ void     nautilus_navigation_window_clear_back_list      (NautilusNavigationWind
 void     nautilus_navigation_window_clear_forward_list   (NautilusNavigationWindow *window);
 void     nautilus_forget_history                         (void);
 gint     nautilus_navigation_window_get_base_page_index  (NautilusNavigationWindow *window);
-void     nautilus_navigation_window_hide_location_bar    (NautilusNavigationWindow *window,
-                                                          gboolean                  save_preference);
-void     nautilus_navigation_window_show_location_bar    (NautilusNavigationWindow *window,
-                                                          gboolean                  save_preference);
-
-void     nautilus_navigation_window_hide_path_bar        (NautilusNavigationWindow *window);
-void     nautilus_navigation_window_show_path_bar        (NautilusNavigationWindow *window);
-gboolean nautilus_navigation_window_path_bar_showing 	 (NautilusNavigationWindow *window);
-
-gboolean nautilus_navigation_window_search_bar_showing 	 (NautilusNavigationWindow *window);
-
-gboolean nautilus_navigation_window_location_bar_showing (NautilusNavigationWindow *window);
 void     nautilus_navigation_window_hide_toolbar         (NautilusNavigationWindow *window);
 void     nautilus_navigation_window_show_toolbar         (NautilusNavigationWindow *window);
 gboolean nautilus_navigation_window_toolbar_showing      (NautilusNavigationWindow *window);
@@ -120,5 +101,7 @@ void     nautilus_navigation_window_back_or_forward      (NautilusNavigationWind
                                                           guint                     distance,
 							  gboolean                  new_tab);
 void     nautilus_navigation_window_show_search          (NautilusNavigationWindow *window);
+void     nautilus_navigation_window_unset_focus_widget   (NautilusNavigationWindow *window);
+gboolean nautilus_navigation_window_hide_temporary_bars (NautilusNavigationWindow *window);
 
 #endif

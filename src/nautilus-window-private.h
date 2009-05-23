@@ -86,16 +86,6 @@ struct _NautilusNavigationWindowDetails {
         GtkWidget *content_box;
         GtkActionGroup *navigation_action_group; /* owned by ui_manager */
         
-        /* Location bar */
-        gboolean temporary_navigation_bar;
-        gboolean temporary_location_bar;
-        gboolean temporary_search_bar;
-
-        GtkWidget *location_button;
-	/* focus widget before the location bar
-	 * has been shown temporarily */
-	GtkWidget *last_focus_widget;
-
         /* Side Pane */
         int side_pane_width;
         NautilusSidebar *current_side_panel;
@@ -110,7 +100,6 @@ struct _NautilusNavigationWindowDetails {
 
         /* Toolbar */
         GtkWidget *toolbar;
-        GtkWidget *location_bar;
 
         guint extensions_toolbar_merge_id;
         GtkActionGroup *extensions_toolbar_action_group;
@@ -118,6 +107,9 @@ struct _NautilusNavigationWindowDetails {
 	/* Throbber */
         gboolean    throbber_active;
         GtkWidget  *throbber;
+
+        /* focus widget before the location bar has been shown temporarily */
+        GtkWidget *last_focus_widget;
 };
 
 #define NAUTILUS_MENU_PATH_BACK_ITEM			"/menu/Go/Back"
@@ -179,11 +171,6 @@ void               nautilus_menus_append_bookmark_to_menu                (Nautil
 void               nautilus_window_go_up                                 (NautilusWindow    *window);
 #endif
 void               nautilus_window_update_find_menu_item                 (NautilusWindow    *window);
-void               nautilus_window_zoom_in                               (NautilusWindow    *window);
-void               nautilus_window_zoom_out                              (NautilusWindow    *window);
-void               nautilus_window_zoom_to_level                         (NautilusWindow    *window,
-                                                                          NautilusZoomLevel  level);
-void               nautilus_window_zoom_to_default                       (NautilusWindow    *window);
 
 NautilusWindowSlot *nautilus_window_open_slot                            (NautilusWindowPane *pane,
 									  NautilusWindowOpenSlotFlags flags);
@@ -197,7 +184,7 @@ NautilusWindowSlot *nautilus_window_get_slot_for_content_box             (Nautil
 
 GList *              nautilus_window_get_slots                           (NautilusWindow    *window);
 NautilusWindowSlot * nautilus_window_get_active_slot                     (NautilusWindow    *window);
-void                 nautilus_window_set_active_slot                     (NautilusWindowPane *pane,
+void                 nautilus_window_set_active_slot                     (NautilusWindow    *window,
 									  NautilusWindowSlot *slot);
 void                 nautilus_window_set_active_pane                     (NautilusWindow *window,
                                                                           NautilusWindowPane *new_pane);

@@ -102,5 +102,7 @@ void     nautilus_navigation_window_back_or_forward      (NautilusNavigationWind
 void     nautilus_navigation_window_show_search          (NautilusNavigationWindow *window);
 void     nautilus_navigation_window_unset_focus_widget   (NautilusNavigationWindow *window);
 gboolean nautilus_navigation_window_hide_temporary_bars (NautilusNavigationWindow *window);
+void     nautilus_navigation_window_split_view_on        (NautilusNavigationWindow *window);
+void     nautilus_navigation_window_split_view_off       (NautilusNavigationWindow *window);
 
 #endif

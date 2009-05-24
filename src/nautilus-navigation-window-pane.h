@@ -64,7 +64,10 @@ struct _NautilusNavigationWindowPane {
     
 	/* tab menu */
 	GtkActionGroup *tabs_menu_action_group;
-	guint tabs_menu_merge_id;    
+	guint tabs_menu_merge_id;
+    
+	/* split view */
+	GtkWidget *split_view_hpane;
 };
 
 GType    nautilus_navigation_window_pane_get_type (void);

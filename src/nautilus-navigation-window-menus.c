@@ -207,6 +207,21 @@ action_show_hide_statusbar_callback (GtkAction *action,
 	}
 }
 
+static void
+action_split_view_callback (GtkAction *action,
+			    gpointer user_data)
+{
+	NautilusNavigationWindow *window;
+
+	window = NAUTILUS_NAVIGATION_WINDOW (user_data);
+
+	if (gtk_toggle_action_get_active (GTK_TOGGLE_ACTION (action))) {
+		nautilus_navigation_window_split_view_on (window);
+	} else {
+		nautilus_navigation_window_split_view_off (window);
+	}
+}
+
 void
 nautilus_navigation_window_update_show_hide_menu_items (NautilusNavigationWindow *window) 
 {
@@ -847,6 +862,11 @@ static const GtkToggleActionEntry navigation_toggle_entries[] = {
   /* tooltip */              N_("Change the visibility of this window's statusbar"),
                              G_CALLBACK (action_show_hide_statusbar_callback),
   /* is_active */            TRUE }, 
+  /* name, stock id */     { "Show Hide Extra Pane", NULL,
+  /* label, accelerator */   N_("Extra Pane"), "F3",
+  /* tooltip */              N_("Open an extra folder view side-by-side"),
+                             G_CALLBACK (action_split_view_callback),
+  /* is_active */            FALSE },
 };
 
 void 

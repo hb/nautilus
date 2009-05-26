@@ -545,27 +545,18 @@ static void
 nautilus_window_destroy (GtkObject *object)
 {
 	NautilusWindow *window;
-	NautilusWindowSlot *slot;
-	GList *l, *slots, *walk;
-
-	window = NAUTILUS_WINDOW (object);
-
-	/* close all slots */
-	for (walk = window->details->panes; walk; walk = walk->next) {
-		NautilusWindowPane *pane = walk->data;
-		
-		/* close all slots */
-		slots = g_list_copy (pane->slots);
-		for (l = slots; l != NULL; l = l->next) {
-			slot = NAUTILUS_WINDOW_SLOT (l->data);
-			nautilus_window_close_slot (slot);
-		}
-		g_list_free (slots);
-	}
-	
-	g_list_free (window->details->panes);
-	window->details->panes = NULL;
-	window->details->active_pane = NULL;
+    GList *panes_copy;
+    
+    window = NAUTILUS_WINDOW (object);
+    
+    /* nautilus_window_close_pane removes the respective pane from the list,
+     * so it needs to be copied first. */
+    panes_copy = g_list_copy(window->details->panes);
+    g_list_foreach (panes_copy, (GFunc) nautilus_window_close_pane, NULL);
+    g_list_free(panes_copy);
+    
+    /* the panes list should now be empty */
+    g_assert(window->details->panes == NULL);
 
 	GTK_OBJECT_CLASS (nautilus_window_parent_class)->destroy (object);
 }
@@ -681,6 +672,33 @@ real_close_slot (NautilusWindowPane *pane,
 	nautilus_window_manage_views_close_slot (pane, slot);
 	cancel_view_as_callback (slot);
 	g_object_unref (slot);
+}
+
+void
+nautilus_window_close_pane (NautilusWindowPane *pane)
+{
+	NautilusWindow *window;
+    
+	g_assert (NAUTILUS_IS_WINDOW_PANE (pane));
+	g_assert (NAUTILUS_IS_WINDOW (pane->window));
+	g_assert (g_list_find (pane->window->details->panes, pane) != NULL);
+
+	window = pane->window;
+	
+	/* this has to be done before active_pane is invalidated so that slots can disconnect properly */
+	g_object_unref (pane);
+
+	window->details->panes = g_list_remove (window->details->panes, pane);
+
+	/* if the pane was active, select the next one, or NULL */
+	if (window->details->active_pane == pane) {
+		if (window->details->panes) {
+			window->details->active_pane = window->details->panes->data;
+		}
+		else {
+			window->details->active_pane = NULL;
+		}
+	}
 }
 
 void

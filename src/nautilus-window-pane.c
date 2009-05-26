@@ -199,12 +199,20 @@ nautilus_window_pane_class_init (NautilusWindowPaneClass *class)
 static void
 nautilus_window_pane_dispose (GObject *object)
 {
-  NautilusWindowPane *pane = NAUTILUS_WINDOW_PANE (object);
+    NautilusWindowPane *pane = NAUTILUS_WINDOW_PANE (object);
+    GList *slots_copy;
 
-  /* hhb: TODO: slot lists cleanup */
+    /* nautilus_window_close_slot removes the respective slot from the list,
+     * so it needs to be copied first. */
+    slots_copy = g_list_copy(pane->slots);
+    g_list_foreach (slots_copy, (GFunc) nautilus_window_close_slot, NULL);
+    g_list_free(slots_copy);
 
-  pane->window = NULL;
-  G_OBJECT_CLASS (parent_class)->dispose (object);
+    /* the slots list should now be empty */
+    g_assert(pane->slots == NULL);
+
+    pane->window = NULL;
+    G_OBJECT_CLASS (parent_class)->dispose (object);
 }
 
 NautilusWindowSlot *
@@ -222,4 +230,15 @@ nautilus_window_pane_get_slot_for_content_box (NautilusWindowPane *pane,
 		}
 	}
 	return NULL;
+}
+
+NautilusWindowPane*
+nautilus_window_pane_new (NautilusWindow *window)
+{
+	NautilusWindowPane *pane;
+	pane = (NautilusWindowPane*) g_object_new(NAUTILUS_TYPE_WINDOW_PANE, NULL);
+	pane->window = window;
+	window->details->panes = g_list_append(window->details->panes, pane);
+	
+	return pane;	
 }

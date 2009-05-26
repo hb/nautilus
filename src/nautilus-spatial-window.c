@@ -960,9 +960,7 @@ nautilus_spatial_window_init (NautilusSpatialWindow *window)
 
 	win = NAUTILUS_WINDOW(window);
 
-	pane = (NautilusWindowPane*) g_object_new(NAUTILUS_TYPE_WINDOW_PANE, NULL);
-	pane->window = win;
-	win->details->panes = g_list_prepend(win->details->panes, pane);
+	pane = nautilus_window_pane_new (win);
 
 	window->affect_spatial_window_on_next_location_change = TRUE;
 

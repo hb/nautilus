@@ -1285,12 +1285,75 @@ nautilus_navigation_window_class_init (NautilusNavigationWindowClass *class)
 
 void nautilus_navigation_window_split_view_on (NautilusNavigationWindow *window)
 {
-    /* hhb: TODO: implement this */
-	g_print("hhb: split view on\n");
+    NautilusWindow *win;
+    NautilusNavigationWindowPane *pane;
+    GtkWidget *hpaned;
+    GtkWidget *vbox;
+    
+    g_print("hhb: split view on\n");
+    
+    win = NAUTILUS_WINDOW (window);
+    pane = NAUTILUS_NAVIGATION_WINDOW_PANE (win->details->active_pane);
+    
+    /* remove folder view and location bar from ui */
+    g_object_ref (pane->notebook);
+    gtk_container_remove (GTK_CONTAINER (window->details->content_paned), pane->notebook);
+    g_object_ref (pane->location_bar);
+    gtk_container_remove (GTK_CONTAINER (win->details->table), pane->location_bar);
+    
+    /* put a horizontal splitter where the notebook used to be */
+    hpaned = gtk_hpaned_new ();
+    gtk_widget_show (hpaned);
+    nautilus_horizontal_splitter_pack2 (NAUTILUS_HORIZONTAL_SPLITTER (window->details->content_paned), hpaned);
+    window->details->split_view_hpane = hpaned;
+    
+    /* left side: move original folder view and location bar here */
+    vbox = gtk_vbox_new (FALSE, 4);
+    gtk_paned_pack1 (GTK_PANED(hpaned), vbox, TRUE, TRUE);
+    gtk_box_pack_start (GTK_BOX (vbox), pane->location_bar, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (vbox), pane->notebook,TRUE, TRUE, 0);
+    gtk_widget_show(vbox);  
 }
 
 void nautilus_navigation_window_split_view_off (NautilusNavigationWindow *window)
 {
-    /* hhb: TODO: implement this */
-	g_print("hhb: split view off\n");
+    NautilusWindow *win;
+    NautilusNavigationWindowPane *main_pane;
+    GList *walk;
+    GtkWidget *vbox;
+
+    g_print("hhb: split view off\n");
+
+    win = NAUTILUS_WINDOW (window);
+    
+    g_return_if_fail (win);
+    g_return_if_fail (window->details->split_view_hpane);
+
+    /* no matter what the active pane was before: now, it's the main pane */
+    main_pane = NAUTILUS_NAVIGATION_WINDOW_PANE (win->details->panes->data);
+    nautilus_window_set_active_pane (win, NAUTILUS_WINDOW_PANE (main_pane));
+    
+    /* delete all panes except the first (main) pane */
+    for (walk = win->details->panes->next; walk; walk = walk->next) {
+        nautilus_window_close_pane (walk->data);
+    }
+
+    /* remove folder view and location bar from left side, and destroy hpane */
+    vbox = gtk_paned_get_child1 (GTK_PANED (window->details->split_view_hpane));
+    g_object_ref (main_pane->notebook);
+    gtk_container_remove (GTK_CONTAINER (vbox), main_pane->notebook);
+    g_object_ref (main_pane->location_bar);
+    gtk_container_remove (GTK_CONTAINER (vbox), main_pane->location_bar);
+    gtk_widget_destroy (window->details->split_view_hpane);
+    window->details->split_view_hpane = NULL;
+
+    /* put widgets from left pane back to their original places */
+    gtk_table_attach (GTK_TABLE (win->details->table),
+		      main_pane->location_bar,
+		      /* X direction */                    /* Y direction */
+		      0, 1,                                2, 3,
+		      GTK_EXPAND | GTK_FILL | GTK_SHRINK,  0,
+		      0,                                   0);
+    nautilus_horizontal_splitter_pack2 (NAUTILUS_HORIZONTAL_SPLITTER (window->details->content_paned),
+					main_pane->notebook);
 }

@@ -43,6 +43,7 @@
 #include "nautilus-window-manage-views.h"
 #include "nautilus-zoom-control.h"
 #include "nautilus-navigation-window-pane.h"
+#include "file-manager/fm-list-view.h"
 #include <eel/eel-gtk-extensions.h>
 #include <eel/eel-gtk-macros.h>
 #include <eel/eel-string.h>
@@ -1281,18 +1282,38 @@ nautilus_navigation_window_class_init (NautilusNavigationWindowClass *class)
 				      NULL);
 }
 
+static void
+split_view_added_to_container_callback (GtkContainer *container, GtkWidget *widget, gpointer user_data)
+{
+	NautilusNavigationWindowPane *pane;
+
+	/* list view doesn't focus automatically */
+	if (FM_IS_LIST_VIEW (widget)) {
+		GtkWidget *focus_widget;
+		focus_widget = GTK_WIDGET (fm_list_view_get_tree_view (FM_LIST_VIEW (widget)));
+		gtk_widget_grab_focus (focus_widget); 
+	}
+
+	/* now that view is ready, show the location bar */
+	pane = NAUTILUS_NAVIGATION_WINDOW_PANE (user_data);
+	gtk_widget_show (pane->location_bar);
+}
+
 void nautilus_navigation_window_split_view_on (NautilusNavigationWindow *window)
 {
     NautilusWindow *win;
-    NautilusNavigationWindowPane *pane;
+    NautilusNavigationWindowPane *pane, *main_pane;
     GtkWidget *hpaned;
     GtkWidget *vbox;
     gint idx;
+    NautilusWindowSlot *slot;
+    GFile *location;
 
     g_print("hhb: split view on\n");
     
     win = NAUTILUS_WINDOW (window);
     pane = NAUTILUS_NAVIGATION_WINDOW_PANE (win->details->active_pane);
+    main_pane = pane;
     
     /* remove folder view and location bar from ui */
     g_object_ref (pane->notebook);
@@ -1316,6 +1337,55 @@ void nautilus_navigation_window_split_view_on (NautilusNavigationWindow *window)
     /* pack view as combo box into toolbar */
     pane->view_as_combo_box_item_index = gtk_toolbar_get_item_index (GTK_TOOLBAR (pane->location_bar), pane->view_as_combo_box_item);
     g_object_ref (pane->view_as_combo_box_item);
+    gtk_container_remove (GTK_CONTAINER (pane->location_bar), GTK_WIDGET (pane->view_as_combo_box_item));
+    idx = gtk_toolbar_get_n_items (GTK_TOOLBAR (window->details->toolbar));
+    gtk_toolbar_insert (GTK_TOOLBAR (window->details->toolbar), pane->view_as_combo_box_item, idx-1);
+    g_object_unref (pane->view_as_combo_box_item);
+    
+	/* right side */
+    pane = nautilus_navigation_window_pane_new (win);
+	
+    vbox = gtk_vbox_new (FALSE, 4);
+    gtk_paned_pack2 (GTK_PANED(hpaned), vbox, TRUE, TRUE);
+    gtk_widget_show(vbox);
+
+    /* location bar */
+    nautilus_navigation_window_pane_setup_location_bar (pane);
+    gtk_box_pack_start (GTK_BOX(vbox), pane->location_bar, FALSE, FALSE, 0);
+    
+    /* notebook */
+    nautilus_navigation_window_pane_setup_notebook (pane);
+    gtk_box_pack_start (GTK_BOX(vbox), pane->notebook, TRUE, TRUE, 0);
+    
+    /* slot */
+    slot = nautilus_window_open_slot (NAUTILUS_WINDOW_PANE (pane), NAUTILUS_WINDOW_OPEN_SLOT_APPEND);
+
+    nautilus_navigation_window_pane_initialize_tabs_menu(pane);        
+
+    nautilus_window_set_active_slot (win, slot);
+
+    location = nautilus_window_slot_get_location (NAUTILUS_WINDOW_PANE (main_pane)->active_slot);
+    if (!location) {
+            char *scheme;
+            scheme = g_file_get_uri_scheme (location);
+        if (!strcmp (scheme, "x-nautilus-search")) {
+                    g_object_unref (location);
+            }
+        g_free (scheme);
+        location = g_file_new_for_path (g_get_home_dir ());
+    }
+
+    nautilus_window_slot_go_to (slot, location, FALSE);
+    g_object_unref (location);
+    nautilus_navigation_window_pane_sync_location_widgets(pane);
+    
+    /* listen when view is finally added */
+    g_signal_connect_object (GTK_CONTAINER (NAUTILUS_WINDOW_PANE (pane)->active_slot->view_box), "add",
+        G_CALLBACK (split_view_added_to_container_callback), pane, 0);
+    
+    /* move view as combo box of second pane to main toolbar, also */
+    g_object_ref (pane->view_as_combo_box_item);
+    pane->view_as_combo_box_item_index = gtk_toolbar_get_item_index (GTK_TOOLBAR (pane->location_bar), pane->view_as_combo_box_item);
     gtk_container_remove (GTK_CONTAINER (pane->location_bar), GTK_WIDGET (pane->view_as_combo_box_item));
     idx = gtk_toolbar_get_n_items (GTK_TOOLBAR (window->details->toolbar));
     gtk_toolbar_insert (GTK_TOOLBAR (window->details->toolbar), pane->view_as_combo_box_item, idx-1);

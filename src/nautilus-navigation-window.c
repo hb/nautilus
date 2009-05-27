@@ -1289,7 +1289,8 @@ void nautilus_navigation_window_split_view_on (NautilusNavigationWindow *window)
     NautilusNavigationWindowPane *pane;
     GtkWidget *hpaned;
     GtkWidget *vbox;
-    
+    gint idx;
+
     g_print("hhb: split view on\n");
     
     win = NAUTILUS_WINDOW (window);
@@ -1312,7 +1313,15 @@ void nautilus_navigation_window_split_view_on (NautilusNavigationWindow *window)
     gtk_paned_pack1 (GTK_PANED(hpaned), vbox, TRUE, TRUE);
     gtk_box_pack_start (GTK_BOX (vbox), pane->location_bar, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (vbox), pane->notebook,TRUE, TRUE, 0);
-    gtk_widget_show(vbox);  
+    gtk_widget_show(vbox);
+
+    /* pack view as combo box into toolbar */
+    pane->view_as_combo_box_item_index = gtk_toolbar_get_item_index (GTK_TOOLBAR (pane->location_bar), pane->view_as_combo_box_item);
+    g_object_ref (pane->view_as_combo_box_item);
+    gtk_container_remove (GTK_CONTAINER (pane->location_bar), GTK_WIDGET (pane->view_as_combo_box_item));
+    idx = gtk_toolbar_get_n_items (GTK_TOOLBAR (window->details->toolbar));
+    gtk_toolbar_insert (GTK_TOOLBAR (window->details->toolbar), pane->view_as_combo_box_item, idx-1);
+    g_object_unref (pane->view_as_combo_box_item);
 }
 
 void nautilus_navigation_window_split_view_off (NautilusNavigationWindow *window)
@@ -1356,4 +1365,10 @@ void nautilus_navigation_window_split_view_off (NautilusNavigationWindow *window
 		      0,                                   0);
     nautilus_horizontal_splitter_pack2 (NAUTILUS_HORIZONTAL_SPLITTER (window->details->content_paned),
 					main_pane->notebook);
+
+    /* put view as combo box back */
+    g_object_ref (main_pane->view_as_combo_box_item);
+    gtk_container_remove (GTK_CONTAINER (window->details->toolbar), GTK_WIDGET (main_pane->view_as_combo_box_item));
+    gtk_toolbar_insert (GTK_TOOLBAR (main_pane->location_bar), main_pane->view_as_combo_box_item, -1);
+    g_object_unref (main_pane->view_as_combo_box_item);
 }

@@ -97,9 +97,6 @@ struct _NautilusNavigationWindowDetails {
 	guint refresh_go_menu_idle_id;
         guint go_menu_merge_id;
         
-	GtkActionGroup *tabs_menu_action_group;
-	guint tabs_menu_merge_id;
-
         /* Toolbar */
         GtkWidget *toolbar;
 

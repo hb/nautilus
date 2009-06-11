@@ -339,6 +339,10 @@ static void action_copy_files_callback             (GtkAction *action,
 						    gpointer   callback_data);
 static void action_paste_files_callback            (GtkAction *action,
 						    gpointer   callback_data);
+static void action_copy_to_next_pane_callback      (GtkAction *action,
+						    gpointer   callback_data);
+static void action_move_to_next_pane_callback      (GtkAction *action,
+						    gpointer   callback_data);
 static void action_rename_callback                 (GtkAction *action,
 						    gpointer   callback_data);
 static void action_rename_select_all_callback      (GtkAction *action,
@@ -5783,13 +5787,11 @@ copy_or_cut_files (FMDirectoryView *view,
 }
 
 static void
-action_copy_files_callback (GtkAction *action,
-			    gpointer callback_data)
+action_copy_files (GtkAction *action,
+		   FMDirectoryView *view)
 {
-	FMDirectoryView *view;
 	GList *selection;
 
-	view = get_active_directory_view (NAUTILUS_WINDOW_INFO (callback_data));
 	g_assert (FM_IS_DIRECTORY_VIEW (view));
 
 	selection = fm_directory_view_get_selection_for_file_transfer (view);
@@ -5798,18 +5800,42 @@ action_copy_files_callback (GtkAction *action,
 }
 
 static void
-action_cut_files_callback (GtkAction *action,
-			   gpointer callback_data)
+action_copy_files_callback (GtkAction *action,
+			    gpointer callback_data)
 {
-	FMDirectoryView *view;
+	action_copy_files (action, get_active_directory_view (NAUTILUS_WINDOW_INFO (callback_data)));
+}
+
+static void
+action_copy_to_next_pane_callback (GtkAction *action, gpointer callback_data)
+{
+	nautilus_window_info_copy_move_selection_to_next_pane (NAUTILUS_WINDOW_INFO (callback_data), TRUE);
+}
+
+static void
+action_move_to_next_pane_callback (GtkAction *action, gpointer callback_data)
+{
+	nautilus_window_info_copy_move_selection_to_next_pane (NAUTILUS_WINDOW_INFO (callback_data), FALSE);
+}
+
+static void
+action_cut_files (GtkAction *action,
+		  FMDirectoryView *view)
+{
 	GList *selection;
 
-	view = get_active_directory_view (NAUTILUS_WINDOW_INFO (callback_data));
 	g_assert (FM_IS_DIRECTORY_VIEW (view));
 
 	selection = fm_directory_view_get_selection_for_file_transfer (view);
 	copy_or_cut_files (view, selection, TRUE);
 	nautilus_file_list_free (selection);
+}
+
+static void
+action_cut_files_callback (GtkAction *action,
+			   gpointer callback_data)
+{
+	action_cut_files (action, get_active_directory_view (NAUTILUS_WINDOW_INFO (callback_data)));
 }
 
 static void
@@ -5895,12 +5921,9 @@ paste_into_clipboard_received_callback (GtkClipboard     *clipboard,
 }
 
 static void
-action_paste_files_callback (GtkAction *action,
-			     gpointer callback_data)
+action_paste_files (GtkAction *action,
+		    FMDirectoryView *view)
 {
-	FMDirectoryView *view;
-
-	view = get_active_directory_view (NAUTILUS_WINDOW_INFO (callback_data));
 	g_assert (FM_IS_DIRECTORY_VIEW (view));
 	
 	g_object_ref (view);
@@ -5908,6 +5931,13 @@ action_paste_files_callback (GtkAction *action,
 					copied_files_atom,
 					paste_clipboard_received_callback,
 					view);
+}
+
+static void
+action_paste_files_callback (GtkAction *action,
+			     gpointer callback_data)
+{
+	action_paste_files (action, get_active_directory_view (NAUTILUS_WINDOW_INFO (callback_data)));
 }
 
 static void
@@ -6763,6 +6793,8 @@ static const GtkActionEntry directory_view_entries[] = {
   /* label, accelerator */       N_("_Paste Into Folder"), "",
   /* tooltip */                  N_("Move or copy files previously selected by a Cut or Copy command into the selected folder"),
                                  G_CALLBACK (action_paste_files_into_callback) },
+  /* name, stock id, label */  { "CopyToMenu", NULL, N_("Copy to") },
+  /* name, stock id, label */  { "MoveToMenu", NULL, N_("Move to") },                      
   /* name, stock id */         { "Select All", NULL,
   /* label, accelerator */       N_("Select _All"), "<control>A",
   /* tooltip */                  N_("Select all items in this window"),
@@ -6923,6 +6955,13 @@ static const GtkActionEntry directory_view_entries[] = {
   /* label, accelerator */       N_("_Properties"), NULL,
   /* tooltip */                  N_("View or modify the properties of this folder"),
                                  G_CALLBACK (action_location_properties_callback) },
+
+  /* name, stock id, label */  {"Copy to next pane", NULL, N_("Copy to other pane"),
+				NULL, N_("Copy the current selection to the other side of the split view"),
+				G_CALLBACK (action_copy_to_next_pane_callback) },
+  /* name, stock id, label */  {"Move to next pane", NULL, N_("Move to other pane"),
+				NULL, N_("Move the current selection to the other side of the split view"),
+				G_CALLBACK (action_move_to_next_pane_callback) },                                 
 };
 
 static void
@@ -7843,6 +7882,7 @@ real_update_menus (FMDirectoryView *view)
 	GtkAction *action;
 	GAppInfo *app;
 	GIcon *app_icon;
+    gboolean next_pane_is_writable;
 
 	selection = fm_directory_view_get_selection (view);
 	selection_count = g_list_length (selection);
@@ -8005,6 +8045,14 @@ real_update_menus (FMDirectoryView *view)
 		action = gtk_action_group_get_action (view->details->dir_action_group,
 						      FM_ACTION_OPEN_IN_NEW_TAB);
 		gtk_action_set_visible (action, FALSE);
+
+		/* next pane actions */
+		action = gtk_action_group_get_action (view->details->dir_action_group,
+						      FM_ACTION_COPY_TO_NEXT_PANE);
+		gtk_action_set_visible (action, FALSE);
+		action = gtk_action_group_get_action (view->details->dir_action_group,
+						      FM_ACTION_MOVE_TO_NEXT_PANE);
+		gtk_action_set_visible (action, FALSE);
 	}
 
 	
@@ -8159,6 +8207,18 @@ real_update_menus (FMDirectoryView *view)
 	if (can_create_files && view->details->templates_invalid) {
 		update_templates_menu (view);
 	}
+
+	next_pane_is_writable = nautilus_window_info_next_pane_is_writable(fm_directory_view_get_nautilus_window (view)); 
+
+	/* next pane: works if file is copyable, and next pane is writable */
+	action = gtk_action_group_get_action(view->details->dir_action_group,
+			FM_ACTION_COPY_TO_NEXT_PANE);
+	gtk_action_set_sensitive (action, can_copy_files && next_pane_is_writable);
+
+	/* move to next pane: works if file is cuttable, and next pane is writable */
+	action = gtk_action_group_get_action(view->details->dir_action_group,
+			FM_ACTION_MOVE_TO_NEXT_PANE);
+	gtk_action_set_sensitive (action, can_delete_files && next_pane_is_writable);
 }
 
 /**
@@ -10027,4 +10087,16 @@ fm_directory_view_class_init (FMDirectoryViewClass *klass)
 
 	klass->trash = real_trash;
 	klass->delete = real_delete;
+}
+
+void
+fm_directory_view_move_copy_items_between_views (FMDirectoryView *source, FMDirectoryView *target, gboolean copy)
+{
+	if (copy) {
+		action_copy_files (NULL, source);
+	}
+	else {
+		action_cut_files (NULL, source);
+	}
+	action_paste_files (NULL, target); 
 }

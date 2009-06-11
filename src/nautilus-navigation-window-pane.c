@@ -29,6 +29,7 @@
 #include "nautilus-location-bar.h"
 #include "nautilus-zoom-control.h"
 #include "nautilus-notebook.h"
+#include "nautilus-border.h"
 
 #include <libnautilus-private/nautilus-global-preferences.h>
 #include <libnautilus-private/nautilus-window-slot-info.h>
@@ -79,6 +80,11 @@ nautilus_navigation_window_pane_set_active (NautilusNavigationWindowPane *pane, 
 
 	/* navigation bar (manual entry) */
 	nautilus_location_bar_set_active (NAUTILUS_LOCATION_BAR (pane->navigation_bar), is_active);
+
+	/* decorative border */
+	if (NAUTILUS_IS_BORDER (pane->border)) {
+		nautilus_border_set_active_appearance(NAUTILUS_BORDER (pane->border), is_active);
+	}
 }
 
 static gboolean

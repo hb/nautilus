@@ -43,6 +43,7 @@
 #include "nautilus-window-manage-views.h"
 #include "nautilus-zoom-control.h"
 #include "nautilus-navigation-window-pane.h"
+#include "nautilus-border.h"
 #include "file-manager/fm-list-view.h"
 #include <eel/eel-gtk-extensions.h>
 #include <eel/eel-gtk-macros.h>
@@ -1328,8 +1329,12 @@ void nautilus_navigation_window_split_view_on (NautilusNavigationWindow *window)
     window->details->split_view_hpane = hpaned;
     
     /* left side: move original folder view and location bar here */
+    pane->border = nautilus_border_new();
+    gtk_paned_pack1 (GTK_PANED(hpaned), pane->border, TRUE, TRUE);
+    gtk_widget_show(pane->border);
+    
     vbox = gtk_vbox_new (FALSE, 4);
-    gtk_paned_pack1 (GTK_PANED(hpaned), vbox, TRUE, TRUE);
+    gtk_container_add (GTK_CONTAINER (pane->border), vbox);
     gtk_box_pack_start (GTK_BOX (vbox), pane->location_bar, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (vbox), pane->notebook,TRUE, TRUE, 0);
     gtk_widget_show(vbox);
@@ -1345,8 +1350,12 @@ void nautilus_navigation_window_split_view_on (NautilusNavigationWindow *window)
 	/* right side */
     pane = nautilus_navigation_window_pane_new (win);
 	
+    pane->border = nautilus_border_new();
+    gtk_paned_pack2 (GTK_PANED(hpaned), pane->border, TRUE, TRUE);
+    gtk_widget_show(pane->border);
+    
     vbox = gtk_vbox_new (FALSE, 4);
-    gtk_paned_pack2 (GTK_PANED(hpaned), vbox, TRUE, TRUE);
+    gtk_container_add (GTK_CONTAINER (pane->border), vbox);
     gtk_widget_show(vbox);
 
     /* location bar */
@@ -1398,6 +1407,7 @@ void nautilus_navigation_window_split_view_off (NautilusNavigationWindow *window
     NautilusNavigationWindowPane *main_pane;
     GList *walk;
     GtkWidget *vbox;
+    GtkWidget *border;
 
     g_print("hhb: split view off\n");
 
@@ -1416,13 +1426,15 @@ void nautilus_navigation_window_split_view_off (NautilusNavigationWindow *window
     }
 
     /* remove folder view and location bar from left side, and destroy hpane */
-    vbox = gtk_paned_get_child1 (GTK_PANED (window->details->split_view_hpane));
+    border = gtk_paned_get_child1 (GTK_PANED (window->details->split_view_hpane));
+    vbox = gtk_bin_get_child (GTK_BIN (border));
     g_object_ref (main_pane->notebook);
     gtk_container_remove (GTK_CONTAINER (vbox), main_pane->notebook);
     g_object_ref (main_pane->location_bar);
     gtk_container_remove (GTK_CONTAINER (vbox), main_pane->location_bar);
     gtk_widget_destroy (window->details->split_view_hpane);
     window->details->split_view_hpane = NULL;
+    main_pane->border = NULL;
 
     /* put widgets from left pane back to their original places */
     gtk_table_attach (GTK_TABLE (win->details->table),

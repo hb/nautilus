@@ -51,6 +51,8 @@ G_DEFINE_TYPE (NautilusNavigationWindowPane,
 void
 nautilus_navigation_window_pane_set_active (NautilusNavigationWindowPane *pane, gboolean is_active)
 {
+	GList *walk;
+
 	if (NAUTILUS_WINDOW_PANE (pane)->is_active == is_active) {
 		return;
 	}
@@ -67,9 +69,13 @@ nautilus_navigation_window_pane_set_active (NautilusNavigationWindowPane *pane, 
 	/* location button */
 	gtk_widget_set_sensitive (gtk_bin_get_child (GTK_BIN (pane->location_button)), is_active);
 	
-	/* hhb: TODO: deal with zoom control */
+	/* zoom control */
+	nautilus_zoom_control_set_active_appearance (NAUTILUS_ZOOM_CONTROL (pane->zoom_control), is_active);
 	
-	/* hhb: TODO: deal with path bar */
+	/* path bar */
+	for (walk = NAUTILUS_PATH_BAR (pane->path_bar)->button_list; walk; walk = walk->next) {
+		gtk_widget_set_sensitive (gtk_bin_get_child (GTK_BIN (nautilus_path_bar_get_button_from_button_list_entry (walk->data))), is_active);
+	}
 
 	/* hhb: TODO: deal with navigation bar (manual entry) */
 }
@@ -316,6 +322,8 @@ path_bar_button_pressed_callback (GtkWidget *widget,
 	NautilusView *view;
 	GFile *location;
 	char *uri;
+
+	nautilus_window_set_active_pane (NAUTILUS_WINDOW_PANE (pane)->window, NAUTILUS_WINDOW_PANE (pane));
 
 	g_object_set_data (G_OBJECT (widget), "handle-button-release",
 			   GINT_TO_POINTER (TRUE));

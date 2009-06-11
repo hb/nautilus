@@ -148,7 +148,6 @@ nautilus_navigation_window_init (NautilusNavigationWindow *window)
 	
 	window->details = G_TYPE_INSTANCE_GET_PRIVATE (window, NAUTILUS_TYPE_NAVIGATION_WINDOW, NautilusNavigationWindowDetails);
 
-
     pane = nautilus_navigation_window_pane_new (win);
 
 	window->details->content_paned = nautilus_horizontal_splitter_new ();
@@ -1369,8 +1368,6 @@ void nautilus_navigation_window_split_view_on (NautilusNavigationWindow *window)
     /* slot */
     slot = nautilus_window_open_slot (NAUTILUS_WINDOW_PANE (pane), NAUTILUS_WINDOW_OPEN_SLOT_APPEND);
 
-    nautilus_navigation_window_pane_initialize_tabs_menu(pane);        
-
     nautilus_window_set_active_slot (win, slot);
 
     location = nautilus_window_slot_get_location (NAUTILUS_WINDOW_PANE (main_pane)->active_slot);
@@ -1414,7 +1411,7 @@ void nautilus_navigation_window_split_view_off (NautilusNavigationWindow *window
     win = NAUTILUS_WINDOW (window);
     
     g_return_if_fail (win);
-    g_return_if_fail (window->details->split_view_hpane);
+    g_return_if_fail (win->details->panes && win->details->panes->next && window->details->split_view_hpane);
 
     /* no matter what the active pane was before: now, it's the main pane */
     main_pane = NAUTILUS_NAVIGATION_WINDOW_PANE (win->details->panes->data);

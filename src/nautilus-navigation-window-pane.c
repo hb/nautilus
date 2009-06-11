@@ -85,6 +85,11 @@ nautilus_navigation_window_pane_set_active (NautilusNavigationWindowPane *pane, 
 	if (NAUTILUS_IS_BORDER (pane->border)) {
 		nautilus_border_set_active_appearance(NAUTILUS_BORDER (pane->border), is_active);
 	}
+    
+    /* if actions/menus exist, update those as well */
+    if (NAUTILUS_NAVIGATION_WINDOW(NAUTILUS_WINDOW_PANE(pane)->window)->details->navigation_action_group) {
+        nautilus_navigation_window_pane_initialize_tabs_menu(pane);
+    }
 }
 
 static gboolean

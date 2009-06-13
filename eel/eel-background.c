@@ -97,6 +97,9 @@ struct EelBackgroundDetails {
 	/* Can we use common pixmap for root window and desktop window */
 	gboolean use_common_pixmap;
 	guint change_idle_id;
+    
+    /* activity status */
+    gboolean is_active;
 };
 
 static void
@@ -170,6 +173,7 @@ eel_background_init (gpointer object, gpointer klass)
 	background->details->default_color.green = 0xffff;
 	background->details->default_color.blue = 0xffff;
 	background->details->bg = gnome_bg_new ();
+    background->details->is_active = TRUE;
 
 	g_signal_connect (background->details->bg, "changed",
 			  G_CALLBACK (on_bg_changed), background);
@@ -418,7 +422,19 @@ eel_background_get_pixmap_and_color (EelBackground *background,
 
 	eel_background_ensure_realized (background, window);
 	
-	*color = background->details->default_color;
+    if(background->details->is_active) {
+        *color = background->details->default_color;
+    }
+    else {
+        GtkStyle *style;
+        style = gtk_widget_get_style (background->details->widget);
+        if (background->details->use_base) {
+			*color = style->base[GTK_STATE_INSENSITIVE];
+		} else {
+			background->details->default_color = style->bg[GTK_STATE_INSENSITIVE];
+		}
+    }
+
 	*changes_with_size = background->details->background_changes_with_size;
 	
 	if (background->details->background_pixmap != NULL) {
@@ -763,9 +779,12 @@ eel_background_set_up_widget (EelBackground *background, GtkWidget *widget)
 	if (!in_fade) {
 	if (!changes_with_size || background->details->is_desktop) {
 		gdk_window_set_back_pixmap (window, pixmap, FALSE);
+        if (!background->details->is_desktop) {
+            gdk_window_set_background (window, &color);
+        }
 	} else {
 		gdk_window_set_back_pixmap (window, NULL, FALSE);
-		gdk_window_set_background (window, &color);
+        gdk_window_set_background (window, &color);
 	}
         }
 	
@@ -1088,6 +1107,15 @@ eel_background_save_to_gconf (EelBackground *background)
 
 	if (background->details->bg)
 		gnome_bg_save_to_preferences (background->details->bg, client);
+}
+
+void
+eel_background_set_active (EelBackground *background, gboolean is_active)
+{
+    if (background->details->is_active != is_active) {
+        background->details->is_active = is_active;
+        g_signal_emit (background, signals[APPEARANCE_CHANGED], 0);
+    }
 }
 
 /* self check code */

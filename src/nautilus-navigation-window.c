@@ -1094,7 +1094,21 @@ nautilus_navigation_window_get_base_page_index (NautilusNavigationWindow *window
 	return forward_count;
 }
 
+static gboolean split_window_on_init_after_setup (gpointer data)
+{
+    GtkAction *action;
+    NautilusNavigationWindow *window;
 
+    g_assert (NAUTILUS_IS_NAVIGATION_WINDOW (data));
+
+    window = NAUTILUS_NAVIGATION_WINDOW (data);
+
+    action = gtk_action_group_get_action (window->details->navigation_action_group,
+                            NAUTILUS_ACTION_SHOW_HIDE_EXTRA_PANE);
+	gtk_toggle_action_set_active (GTK_TOGGLE_ACTION (action), TRUE);
+
+    return FALSE;
+}
 
 /**
  * nautilus_navigation_window_show:
@@ -1110,8 +1124,11 @@ nautilus_navigation_window_show (GtkWidget *widget)
 	gboolean show_location_bar;
 	gboolean always_use_location_entry;
 	GList *walk;
+	gboolean delay_show;
 
 	window = NAUTILUS_NAVIGATION_WINDOW (widget);
+
+	delay_show = FALSE;
 
 	/* Initially show or hide views based on preferences; once the window is displayed
 	 * these can be controlled on a per-window basis from View menu items. 
@@ -1152,7 +1169,17 @@ nautilus_navigation_window_show (GtkWidget *widget)
 		nautilus_navigation_window_hide_status_bar (window);
 	}
 
-	GTK_WIDGET_CLASS (parent_class)->show (widget);
+	if (eel_preferences_get_boolean (NAUTILUS_PREFERENCES_START_WITH_EXTRA_PANE)) {
+		/* We cannot just call nautilus_navigation_window_split_view_on here because this
+		 * function will do major re-organisation of the window, tab actions, directory
+		 * view and its background, which may not be set up completely at this point. */
+		g_idle_add(split_window_on_init_after_setup, window);
+		delay_show = TRUE;
+	}
+
+	if (!delay_show) {
+		GTK_WIDGET_CLASS (parent_class)->show (widget);
+	}
 }
 
 static void
@@ -1299,6 +1326,8 @@ split_view_added_to_container_callback (GtkContainer *container, GtkWidget *widg
 	/* now that view is ready, show the location bar */
 	pane = NAUTILUS_NAVIGATION_WINDOW_PANE (user_data);
 	gtk_widget_show (pane->location_bar);
+
+	GTK_WIDGET_CLASS (parent_class)->show (GTK_WIDGET (NAUTILUS_WINDOW_PANE (pane)->window));
 }
 
 void nautilus_navigation_window_split_view_on (NautilusNavigationWindow *window)
@@ -1398,6 +1427,12 @@ void nautilus_navigation_window_split_view_on (NautilusNavigationWindow *window)
     idx = gtk_toolbar_get_n_items (GTK_TOOLBAR (window->details->toolbar));
     gtk_toolbar_insert (GTK_TOOLBAR (window->details->toolbar), pane->view_as_combo_box_item, idx-1);
     g_object_unref (pane->view_as_combo_box_item);
+
+    /* remember in gconf */
+    if (eel_preferences_key_is_writable (NAUTILUS_PREFERENCES_START_WITH_EXTRA_PANE) &&
+	!eel_preferences_get_boolean (NAUTILUS_PREFERENCES_START_WITH_EXTRA_PANE)) {
+	    eel_preferences_set_boolean (NAUTILUS_PREFERENCES_START_WITH_EXTRA_PANE, TRUE);
+    }
 }
 
 void nautilus_navigation_window_split_view_off (NautilusNavigationWindow *window)
@@ -1450,4 +1485,10 @@ void nautilus_navigation_window_split_view_off (NautilusNavigationWindow *window
     gtk_container_remove (GTK_CONTAINER (window->details->toolbar), GTK_WIDGET (main_pane->view_as_combo_box_item));
     gtk_toolbar_insert (GTK_TOOLBAR (main_pane->location_bar), main_pane->view_as_combo_box_item, -1);
     g_object_unref (main_pane->view_as_combo_box_item);
+
+    /* remember in gconf */
+    if (eel_preferences_key_is_writable (NAUTILUS_PREFERENCES_START_WITH_EXTRA_PANE) &&
+	eel_preferences_get_boolean (NAUTILUS_PREFERENCES_START_WITH_EXTRA_PANE)) {
+	    eel_preferences_set_boolean (NAUTILUS_PREFERENCES_START_WITH_EXTRA_PANE, FALSE);
+    }
 }

@@ -951,7 +951,7 @@ static const GtkToggleActionEntry navigation_toggle_entries[] = {
   /* tooltip */              N_("Change the visibility of this window's statusbar"),
                              G_CALLBACK (action_show_hide_statusbar_callback),
   /* is_active */            TRUE }, 
-  /* name, stock id */     { "Show Hide Extra Pane", NULL,
+  /* name, stock id */     { NAUTILUS_ACTION_SHOW_HIDE_EXTRA_PANE, NULL,
   /* label, accelerator */   N_("Extra Pane"), "F3",
   /* tooltip */              N_("Open an extra folder view side-by-side"),
                              G_CALLBACK (action_split_view_callback),

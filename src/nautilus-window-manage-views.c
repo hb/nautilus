@@ -872,8 +872,7 @@ begin_location_change (NautilusWindowSlot *slot,
 
 	nautilus_file_call_when_ready (slot->determine_view_file,
 				       NAUTILUS_FILE_ATTRIBUTE_INFO |
-				       NAUTILUS_FILE_ATTRIBUTE_MOUNT |
-				       NAUTILUS_FILE_ATTRIBUTE_METADATA,
+				       NAUTILUS_FILE_ATTRIBUTE_MOUNT,
                                        got_file_info_for_view_selection_callback,
 				       slot);
 
@@ -1003,8 +1002,7 @@ mount_not_mounted_callback (GObject *source_object,
 	} else {
 		nautilus_file_invalidate_all_attributes (slot->determine_view_file);
 		nautilus_file_call_when_ready (slot->determine_view_file,
-					       NAUTILUS_FILE_ATTRIBUTE_INFO |
-					       NAUTILUS_FILE_ATTRIBUTE_METADATA,
+					       NAUTILUS_FILE_ATTRIBUTE_INFO,
 					       got_file_info_for_view_selection_callback,
 					       slot);
 	}
@@ -1882,7 +1880,7 @@ display_view_selection_failure (NautilusWindow *window, NautilusFile *file,
 				detail_message = g_strdup_printf (_("Nautilus cannot handle \"%s\" locations."),
 								  scheme_string);
 			} else {
-				detail_message = g_strdup (_("Nautilus cannot handle this kind of locations."));
+				detail_message = g_strdup (_("Nautilus cannot handle this kind of location."));
 			}
 			g_free (scheme_string);
 			break;

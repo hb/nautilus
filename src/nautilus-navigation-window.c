@@ -1346,8 +1346,6 @@ void nautilus_navigation_window_split_view_on (NautilusNavigationWindow *window)
     NautilusWindowSlot *slot;
     GFile *location;
 
-    g_print("hhb: split view on\n");
-
     win = NAUTILUS_WINDOW (window);
     pane = NAUTILUS_NAVIGATION_WINDOW_PANE (win->details->active_pane);
     main_pane = pane;
@@ -1448,8 +1446,6 @@ void nautilus_navigation_window_split_view_off (NautilusNavigationWindow *window
     GList *walk;
     GtkWidget *vbox;
     GtkWidget *border;
-
-    g_print("hhb: split view off\n");
 
     win = NAUTILUS_WINDOW (window);
     

@@ -777,12 +777,14 @@ eel_background_set_up_widget (EelBackground *background, GtkWidget *widget)
 	if (!in_fade) {
 	if (!changes_with_size || background->details->is_desktop) {
 		gdk_window_set_back_pixmap (window, pixmap, FALSE);
-        if (!background->details->is_desktop) {
+        if (!background->details->is_desktop && !background->details->is_active) {
             gdk_window_set_background (window, &color);
         }
 	} else {
 		gdk_window_set_back_pixmap (window, NULL, FALSE);
-        gdk_window_set_background (window, &color);
+        if (!background->details->is_desktop && !background->details->is_active) {
+            gdk_window_set_background (window, &color);
+        }
 	}
         }
 	

@@ -1446,23 +1446,37 @@ void nautilus_navigation_window_split_view_off (NautilusNavigationWindow *window
     GList *walk;
     GtkWidget *vbox;
     GtkWidget *border;
+    gboolean is_left;
 
     win = NAUTILUS_WINDOW (window);
     
     g_return_if_fail (win);
     g_return_if_fail (win->details->panes && win->details->panes->next && window->details->split_view_hpane);
 
-    /* no matter what the active pane was before: now, it's the main pane */
-    main_pane = NAUTILUS_NAVIGATION_WINDOW_PANE (win->details->panes->data);
-    nautilus_window_set_active_pane (win, NAUTILUS_WINDOW_PANE (main_pane));
-    
-    /* delete all panes except the first (main) pane */
-    for (walk = win->details->panes->next; walk; walk = walk->next) {
-        nautilus_window_close_pane (walk->data);
+    /* check whether the left or the right pane is currently active */
+    if (win->details->panes->data == win->details->active_pane) {
+        is_left = TRUE;
+    }
+    else {
+        is_left = FALSE;
+    }
+
+    /* delete all panes except the currently active pane */
+    for (walk = win->details->panes; walk; walk = walk->next) {
+        NautilusWindowPane *pane = walk->data;
+        if (pane != win->details->active_pane) {
+            nautilus_window_close_pane (pane);
+        }
     }
 
     /* remove folder view and location bar from left side, and destroy hpane */
-    border = gtk_paned_get_child1 (GTK_PANED (window->details->split_view_hpane));
+    main_pane = NAUTILUS_NAVIGATION_WINDOW_PANE (win->details->active_pane);
+    if (is_left) {
+        border = gtk_paned_get_child1 (GTK_PANED (window->details->split_view_hpane));
+    }
+    else {
+        border = gtk_paned_get_child2 (GTK_PANED (window->details->split_view_hpane));
+    }
     vbox = gtk_bin_get_child (GTK_BIN (border));
     g_object_ref (main_pane->notebook);
     gtk_container_remove (GTK_CONTAINER (vbox), main_pane->notebook);

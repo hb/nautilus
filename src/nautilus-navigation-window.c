@@ -1367,7 +1367,7 @@ void nautilus_navigation_window_split_view_on (NautilusNavigationWindow *window)
     gtk_paned_pack1 (GTK_PANED(hpaned), pane->border, TRUE, TRUE);
     gtk_widget_show(pane->border);
     
-    vbox = gtk_vbox_new (FALSE, 4);
+    vbox = gtk_vbox_new (FALSE, 0);
     gtk_container_add (GTK_CONTAINER (pane->border), vbox);
     gtk_box_pack_start (GTK_BOX (vbox), pane->location_bar, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (vbox), pane->notebook,TRUE, TRUE, 0);
@@ -1388,7 +1388,7 @@ void nautilus_navigation_window_split_view_on (NautilusNavigationWindow *window)
     gtk_paned_pack2 (GTK_PANED(hpaned), pane->border, TRUE, TRUE);
     gtk_widget_show(pane->border);
     
-    vbox = gtk_vbox_new (FALSE, 4);
+    vbox = gtk_vbox_new (FALSE, 0);
     gtk_container_add (GTK_CONTAINER (pane->border), vbox);
     gtk_widget_show(vbox);
 

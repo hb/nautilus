@@ -730,6 +730,7 @@ button_press_callback (GtkWidget *widget, GdkEventButton *event, gpointer callba
 		/* Deselect if people click outside any row. It's OK to
 		   let default code run; it won't reselect anything. */
 		gtk_tree_selection_unselect_all (gtk_tree_view_get_selection (tree_view));
+		tree_view_class->button_press_event (widget, event);
 
 		if (event->button == 3) {
 			do_popup_menu (widget, view, event);
@@ -1460,7 +1461,7 @@ create_and_set_up_tree_view (FMListView *view)
 			view->details->pixbuf_cell = (GtkCellRendererPixbuf *)cell;
 			
 			view->details->file_name_column = gtk_tree_view_column_new ();
-			g_object_ref (view->details->file_name_column);
+			g_object_ref_sink (view->details->file_name_column);
 			view->details->file_name_column_num = column_num;
 			
 			g_hash_table_insert (view->details->columns,
@@ -1498,7 +1499,7 @@ create_and_set_up_tree_view (FMListView *view)
 									   cell,
 									   "text", column_num,
 									   NULL);
-			g_object_ref (column);
+			g_object_ref_sink (column);
 			gtk_tree_view_column_set_sort_column_id (column, column_num);
 			g_hash_table_insert (view->details->columns, 
 					     g_strdup (name), 
@@ -1562,6 +1563,7 @@ get_visible_columns (FMListView *list_view)
 		g_ptr_array_add (res, NULL);
 
 		ret = (char **) g_ptr_array_free (res, FALSE);
+		g_list_free (visible_columns);
 	}
 
 	return ret ? ret : g_strdupv (default_visible_columns_auto_value);
@@ -1593,6 +1595,7 @@ get_column_order (FMListView *list_view)
 		g_ptr_array_add (res, NULL);
 
 		ret = (char **) g_ptr_array_free (res, FALSE);
+		g_list_free (column_order);
 	}
 
 	return ret ? ret : g_strdupv (default_visible_columns_auto_value);
@@ -2078,10 +2081,10 @@ column_chooser_changed_callback (NautilusColumnChooser *chooser,
 					 list);
 	g_list_free (list);
 
+	apply_columns_settings (view, column_order, visible_columns);
+
 	g_strfreev (visible_columns);
 	g_strfreev (column_order);
-
-	set_columns_settings_from_metadata_and_preferences (view);
 }
 
 static void
@@ -2906,7 +2909,6 @@ fm_list_view_create (NautilusWindowSlotInfo *slot)
 	view = g_object_new (FM_TYPE_LIST_VIEW,
 			     "window-slot", slot,
 			     NULL);
-	g_object_ref (view);
 	return NAUTILUS_VIEW (view);
 }
 

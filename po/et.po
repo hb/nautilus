@@ -22,8 +22,8 @@ msgstr ""
 "Project-Id-Version: nautilus HEAD\n"
 "Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
 "product=nautilus&component=Internationalization (i18n)\n"
-"POT-Creation-Date: 2009-07-18 14:34+0000\n"
-"PO-Revision-Date: 2009-07-20 15:16+0300\n"
+"POT-Creation-Date: 2009-08-10 18:19+0000\n"
+"PO-Revision-Date: 2009-09-05 08:25+0300\n"
 "Last-Translator: Ivar Smolin <okul@linux.ee>\n"
 "Language-Team: Estonian <gnome-et@linux.ee>\n"
 "MIME-Version: 1.0\n"
@@ -37,7 +37,7 @@ msgstr "Fail pole korrektne .desktop fail"
 
 #, c-format
 msgid "Unrecognized desktop file Version '%s'"
-msgstr "Tundmatu töölauafaili verisoon '%s'"
+msgstr "Tundmatu töölauafaili versioon '%s'"
 
 #, c-format
 msgid "Starting %s"
@@ -53,7 +53,8 @@ msgstr "Tundmatu käivitusvalik: %d"
 
 #, c-format
 msgid "Can't pass document URIs to a 'Type=Link' desktop entry"
-msgstr "Dokumendi URId pole võimalik edastada 'Type=Link' töölauakirjele"
+msgstr ""
+"Dokumendi URI-sid pole võimalik 'Liik=Viit' tüüpi töölauakirjetele edastada"
 
 #, c-format
 msgid "Not a launchable item"
@@ -1706,6 +1707,12 @@ msgstr ""
 msgid "The file \"%B\" cannot be moved to the trash."
 msgstr "Faili \"%B\" pole võimalik prügikasti visata."
 
+msgid "Trashing Files"
+msgstr "Failide viskamine prügikasti"
+
+msgid "Deleting Files"
+msgstr "Failide kustutamine"
+
 msgid "Unable to eject %V"
 msgstr "%V väljastamine pole võimalik"
 
@@ -1811,10 +1818,10 @@ msgid "The destination is read-only."
 msgstr "Sihtkoht on kirjutuskaitsega."
 
 msgid "Moving \"%B\" to \"%B\""
-msgstr "\"%B\" liigutamine sihtkohta \"%B\""
+msgstr "\"%B\" ümbertõstmine sihtkohta \"%B\""
 
 msgid "Copying \"%B\" to \"%B\""
-msgstr "\"%B\" kopeerimine asukohta \"%B\""
+msgstr "\"%B\" kopeerimine sihtkohta \"%B\""
 
 msgid "Duplicating \"%B\""
 msgstr "\"%B\" dubleerimine"
@@ -1970,6 +1977,9 @@ msgstr "%F all juba olemasolevat sama nimega faili pole võimalik eemaldada."
 msgid "There was an error copying the file into %F."
 msgstr "Faili kopeerimisel %F alla tekkis viga."
 
+msgid "Copying Files"
+msgstr "Failide kopeerimine"
+
 msgid "Preparing to Move to \"%B\""
 msgstr "Ettevalmistused ümbertõstmiseks sihtkohta \"%B\""
 
@@ -1991,6 +2001,9 @@ msgstr ""
 #, c-format
 msgid "There was an error moving the file into %F."
 msgstr "Faili ümbertõstmisel %F alla tekkis viga."
+
+msgid "Moving Files"
+msgstr "Failide liigutamine"
 
 msgid "Creating links in \"%B\""
 msgstr "\"%B\" alla viitade loomine"
@@ -2034,6 +2047,9 @@ msgstr "Viga faili %B loomisel."
 #, c-format
 msgid "There was an error creating the directory in %F."
 msgstr "%F sisse kataloogi loomisel tekkis viga."
+
+msgid "Emptying Trash"
+msgstr "Prügikasti tühjendamine"
 
 msgid "Unable to mark launcher trusted (executable)"
 msgstr ""
@@ -2898,7 +2914,7 @@ msgid "The folder \"%s\" contains more files than Nautilus can handle."
 msgstr "Kataloog \"%s\" sisaldab rohkem faile, kui Nautilus suudab käsitleda."
 
 msgid "Some files will not be displayed."
-msgstr "Osasid faile ei kuvata."
+msgstr "Mõningaid faile ei kuvata."
 
 #, c-format
 msgid "Open with %s"
@@ -3000,10 +3016,8 @@ msgstr "Asukohta pole võimalik lahti haakida"
 msgid "Unable to eject location"
 msgstr "Asukohta pole võimalik väljastada"
 
-#, fuzzy
-#| msgid "Unable to stop %s"
 msgid "Unable to stop drive"
-msgstr "%s seiskamine pole võimalik"
+msgstr "Ketta seiskamine pole võimalik"
 
 #, c-format
 msgid "Connect to Server %s"
@@ -3107,10 +3121,8 @@ msgstr "Iga valitud kirje avamine kataloogiaknas"
 
 #. name, stock id
 #. label, accelerator
-#, fuzzy
-#| msgid "Open with Other _Application..."
 msgid "Other _Application..."
-msgstr "_Ava mõne muu rakendusega..."
+msgstr "_Muu rakendus..."
 
 #. tooltip
 msgid "Choose another application with which to open the selected item"
@@ -3312,10 +3324,8 @@ msgid "_Detect Media"
 msgstr "_Tuvasta meedia"
 
 #. tooltip
-#, fuzzy
-#| msgid "Connect to the selected drive"
 msgid "Detect media in the selected drive"
-msgstr "Ühendab valitud kettale"
+msgstr "Tuvastab andmekandja valitud seadmes"
 
 #. tooltip
 msgid "Mount the volume associated with the open folder"
@@ -3585,10 +3595,9 @@ msgstr "Avatud kataloogi jäädavalt kustutamine"
 msgid "Move the open folder to the Trash"
 msgstr "Avatud kataloogi prügikasti viskamine"
 
-#, fuzzy, c-format
-#| msgid "Open with %s"
+#, c-format
 msgid "_Open with %s"
-msgstr "Ava programmiga %s"
+msgstr "_Ava programmiga %s"
 
 #, c-format
 msgid "Open in %'d New _Window"
@@ -4100,7 +4109,7 @@ msgid "Owner:"
 msgstr "Omanik:"
 
 msgid "_Group:"
-msgstr "_Grupp:"
+msgstr "G_rupp:"
 
 msgid "Group:"
 msgstr "Grupp:"

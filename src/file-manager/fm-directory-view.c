@@ -105,12 +105,14 @@
 #define FM_DIRECTORY_VIEW_MENU_PATH_SCRIPTS_PLACEHOLDER    		"/MenuBar/File/Open Placeholder/Scripts/Scripts Placeholder"
 #define FM_DIRECTORY_VIEW_MENU_PATH_EXTENSION_ACTIONS_PLACEHOLDER       "/MenuBar/Edit/Extension Actions"
 #define FM_DIRECTORY_VIEW_MENU_PATH_NEW_DOCUMENTS_PLACEHOLDER  		"/MenuBar/File/New Items Placeholder/New Documents/New Documents Placeholder"
+#define FM_DIRECTORY_VIEW_MENU_PATH_OPEN				"/MenuBar/File/Open Placeholder/Open"
 
 #define FM_DIRECTORY_VIEW_POPUP_PATH_SELECTION				"/selection"
 #define FM_DIRECTORY_VIEW_POPUP_PATH_APPLICATIONS_SUBMENU_PLACEHOLDER  	"/selection/Open Placeholder/Open With/Applications Placeholder"
 #define FM_DIRECTORY_VIEW_POPUP_PATH_APPLICATIONS_PLACEHOLDER    	"/selection/Open Placeholder/Applications Placeholder"
 #define FM_DIRECTORY_VIEW_POPUP_PATH_SCRIPTS_PLACEHOLDER    		"/selection/Open Placeholder/Scripts/Scripts Placeholder"
 #define FM_DIRECTORY_VIEW_POPUP_PATH_EXTENSION_ACTIONS			"/selection/Extension Actions"
+#define FM_DIRECTORY_VIEW_POPUP_PATH_OPEN				"/selection/Open Placeholder/Open"
 
 #define FM_DIRECTORY_VIEW_POPUP_PATH_BACKGROUND				"/background"
 #define FM_DIRECTORY_VIEW_POPUP_PATH_BACKGROUND_SCRIPTS_PLACEHOLDER	"/background/Before Zoom Items/New Object Items/Scripts/Scripts Placeholder"
@@ -383,6 +385,11 @@ static void action_location_properties_callback     (GtkAction *action,
 						     gpointer   callback_data);
 
 static void unschedule_pop_up_location_context_menu (FMDirectoryView *view);
+
+static inline void fm_directory_view_widget_to_file_operation_position (FMDirectoryView *view,
+									GdkPoint *position); 
+static void        fm_directory_view_widget_to_file_operation_position_xy (FMDirectoryView *view,
+									   int *x, int *y);
 
 EEL_CLASS_BOILERPLATE (FMDirectoryView, fm_directory_view, GTK_TYPE_SCROLLED_WINDOW)
 
@@ -1647,6 +1654,15 @@ sort_directories_first_changed_callback (gpointer callback_data)
 }
 
 static void
+lockdown_disable_command_line_changed_callback (gpointer callback_data)
+{
+	FMDirectoryView *view;
+
+	view = FM_DIRECTORY_VIEW (callback_data);
+	schedule_update_menus (view);
+}
+
+static void
 set_up_scripts_directory_global (void)
 {
 	char *scripts_directory_path;
@@ -1990,6 +2006,8 @@ fm_directory_view_init (FMDirectoryView *view)
 				      click_policy_changed_callback, view);
 	eel_preferences_add_callback (NAUTILUS_PREFERENCES_SORT_DIRECTORIES_FIRST, 
 				      sort_directories_first_changed_callback, view);
+	eel_preferences_add_callback (NAUTILUS_PREFERENCES_LOCKDOWN_COMMAND_LINE,
+				      lockdown_disable_command_line_changed_callback, view);
 }
 
 static void
@@ -2104,6 +2122,8 @@ fm_directory_view_finalize (GObject *object)
 					 click_policy_changed_callback, view);
 	eel_preferences_remove_callback (NAUTILUS_PREFERENCES_SORT_DIRECTORIES_FIRST,
 					 sort_directories_first_changed_callback, view);
+	eel_preferences_remove_callback (NAUTILUS_PREFERENCES_LOCKDOWN_COMMAND_LINE,
+					 lockdown_disable_command_line_changed_callback, view);
 
 	unschedule_pop_up_location_context_menu (view);
 	if (view->details->location_popup_event != NULL) {
@@ -4076,16 +4096,18 @@ static void
 fm_directory_view_new_file_with_initial_contents (FMDirectoryView *directory_view,
 						  const char *parent_uri,
 						  const char *filename,
-						  const char *initial_contents)
+						  const char *initial_contents,
+						  GdkPoint *pos)
 {
-	GdkPoint *pos;
 	NewFolderData *data;
 
 	g_assert (parent_uri != NULL);
 
 	data = setup_new_folder_data (directory_view);
 
-	pos = context_menu_to_file_operation_position (directory_view);
+	if (pos == NULL) {
+		pos = context_menu_to_file_operation_position (directory_view);
+	}
 
 	nautilus_file_operations_new_file (GTK_WIDGET (directory_view),
 					   pos, parent_uri, filename,
@@ -4112,6 +4134,7 @@ fm_directory_view_new_file (FMDirectoryView *directory_view,
 	if (source == NULL) {
 		fm_directory_view_new_file_with_initial_contents (directory_view,
 								  parent_uri != NULL ? parent_uri : container_uri,
+								  NULL,
 								  NULL,
 								  NULL);
 		g_free (container_uri);
@@ -4319,8 +4342,10 @@ add_application_to_open_with_menu (FMDirectoryView *view,
 	char *label;
 	char *action_name;
 	char *escaped_app;
+	char *path;
 	GtkAction *action;
 	GIcon *app_icon;
+	GtkWidget *menuitem;
 
 	launch_parameters = application_launch_parameters_new 
 		(application, files, view);
@@ -4342,11 +4367,13 @@ add_application_to_open_with_menu (FMDirectoryView *view,
 				 label,
 				 tip,
 				 NULL);
-	
-	app_icon = g_object_ref (g_app_info_get_icon (application));
 
-	if (app_icon == NULL)
+	app_icon = g_app_info_get_icon (application);
+	if (app_icon != NULL) {
+		g_object_ref (app_icon);
+	} else {
 		app_icon = g_themed_icon_new ("application-x-executable");
+	}
 
 	gtk_action_set_gicon (action, app_icon);
 	g_object_unref (app_icon);
@@ -4368,6 +4395,13 @@ add_application_to_open_with_menu (FMDirectoryView *view,
 			       GTK_UI_MANAGER_MENUITEM,
 			       FALSE);
 
+	path = g_strdup_printf ("%s/%s", menu_placeholder, action_name);
+	menuitem = gtk_ui_manager_get_widget (
+			nautilus_window_info_get_ui_manager (view->details->window),
+			path);
+	gtk_image_menu_item_set_always_show_image (GTK_IMAGE_MENU_ITEM (menuitem), TRUE);
+	g_free (path);
+
 	gtk_ui_manager_add_ui (nautilus_window_info_get_ui_manager (view->details->window),
 			       view->details->open_with_merge_id,
 			       popup_placeholder,
@@ -4376,6 +4410,13 @@ add_application_to_open_with_menu (FMDirectoryView *view,
 			       GTK_UI_MANAGER_MENUITEM,
 			       FALSE);
 
+	path = g_strdup_printf ("%s/%s", popup_placeholder, action_name);
+	menuitem = gtk_ui_manager_get_widget (
+			nautilus_window_info_get_ui_manager (view->details->window),
+			path);
+	gtk_image_menu_item_set_always_show_image (GTK_IMAGE_MENU_ITEM (menuitem), TRUE);
+
+	g_free (path);
 	g_free (action_name);
 	g_free (label);
 	g_free (tip);
@@ -8495,6 +8536,7 @@ can_delete_all (GList *files)
 static void
 real_update_menus (FMDirectoryView *view)
 {
+	gboolean next_pane_is_writable;
 	GList *selection, *l;
 	gint selection_count;
 	const char *tip, *label;
@@ -8508,6 +8550,7 @@ real_update_menus (FMDirectoryView *view)
 	gboolean can_duplicate_files;
 	gboolean show_separate_delete_command;
 	gboolean vfolder_directory;
+	gboolean disable_command_line;
 	gboolean show_open_alternate;
 	gboolean can_open;
 	gboolean show_app;
@@ -8518,7 +8561,7 @@ real_update_menus (FMDirectoryView *view)
 	GtkAction *action;
 	GAppInfo *app;
 	GIcon *app_icon;
-    gboolean next_pane_is_writable;
+	GtkWidget *menuitem;
 
 	selection = fm_directory_view_get_selection (view);
 	selection_count = g_list_length (selection);
@@ -8586,7 +8629,10 @@ real_update_menus (FMDirectoryView *view)
 		label_with_underscore = g_strdup_printf (_("_Open with %s"),
 							 escaped_app);
 
-		app_icon = g_object_ref (g_app_info_get_icon (app));
+		app_icon = g_app_info_get_icon (app);
+		if (app_icon != NULL) {
+			g_object_ref (app_icon);
+		}
 
 		g_free (escaped_app);
 		g_object_unref (app);
@@ -8595,6 +8641,22 @@ real_update_menus (FMDirectoryView *view)
 	g_object_set (action, "label", 
 		      label_with_underscore ? label_with_underscore : _("_Open"),
 		      NULL);
+
+	menuitem = gtk_ui_manager_get_widget (
+			nautilus_window_info_get_ui_manager (view->details->window),
+			FM_DIRECTORY_VIEW_MENU_PATH_OPEN);
+
+	/* Only force displaying the icon if it is an application icon */
+	gtk_image_menu_item_set_always_show_image (
+		GTK_IMAGE_MENU_ITEM (menuitem), app_icon != NULL);
+
+	menuitem = gtk_ui_manager_get_widget (
+			nautilus_window_info_get_ui_manager (view->details->window),
+			FM_DIRECTORY_VIEW_POPUP_PATH_OPEN);
+
+	/* Only force displaying the icon if it is an application icon */
+	gtk_image_menu_item_set_always_show_image (
+		GTK_IMAGE_MENU_ITEM (menuitem), app_icon != NULL);
 
 	if (app_icon == NULL) {
 		app_icon = g_themed_icon_new (GTK_STOCK_OPEN);
@@ -8823,9 +8885,10 @@ real_update_menus (FMDirectoryView *view)
 
 	real_update_paste_menu (view, selection, selection_count);
 
+	disable_command_line = eel_preferences_get_boolean (NAUTILUS_PREFERENCES_LOCKDOWN_COMMAND_LINE);
 	action = gtk_action_group_get_action (view->details->dir_action_group,
 					      FM_ACTION_NEW_LAUNCHER);
-	gtk_action_set_visible (action, vfolder_directory);
+	gtk_action_set_visible (action, vfolder_directory && !disable_command_line);
 	gtk_action_set_sensitive (action, can_create_files);
 
 	real_update_menus_volumes (view, selection, selection_count);
@@ -10146,6 +10209,28 @@ handle_netscape_url_drop_timeout (gpointer user_data)
 	return FALSE;
 }
 
+static inline void
+fm_directory_view_widget_to_file_operation_position (FMDirectoryView *view,
+						     GdkPoint *position)
+{
+	EEL_CALL_METHOD (FM_DIRECTORY_VIEW_CLASS, view,
+			 widget_to_file_operation_position,
+			 (view, position));
+}
+
+static void
+fm_directory_view_widget_to_file_operation_position_xy (FMDirectoryView *view,
+							int *x, int *y)
+{
+	GdkPoint position;
+
+	position.x = *x;
+	position.y = *y;
+	fm_directory_view_widget_to_file_operation_position (view, &position);
+	*x = position.x;
+	*y = position.y;
+}
+
 void
 fm_directory_view_handle_netscape_url_drop (FMDirectoryView  *view,
 					    const char       *encoded_url,
@@ -10226,6 +10311,8 @@ fm_directory_view_handle_netscape_url_drop (FMDirectoryView  *view,
 		g_free (container_uri);
 		return;
 	}
+
+	fm_directory_view_widget_to_file_operation_position_xy (view, &x, &y);
 
 	/* We don't support GDK_ACTION_ASK or GDK_ACTION_PRIVATE
 	 * and we don't support combinations either. */
@@ -10369,6 +10456,8 @@ fm_directory_view_handle_uri_list_drop (FMDirectoryView  *view,
 		points = NULL;
 	}
 
+	fm_directory_view_widget_to_file_operation_position_xy (view, &x, &y);
+
 	fm_directory_view_move_copy_items (real_uri_list, points,
 					   target_uri != NULL ? target_uri : container_uri,
 					   action, x, y, view);
@@ -10390,6 +10479,7 @@ fm_directory_view_handle_text_drop (FMDirectoryView  *view,
 				    int               y)
 {
 	char *container_uri;
+	GdkPoint pos;
 
 	if (text == NULL) {
 		return;
@@ -10403,11 +10493,15 @@ fm_directory_view_handle_text_drop (FMDirectoryView  *view,
 		g_assert (container_uri != NULL);
 	}
 
+	pos.x = x;
+	pos.y = y;
+	fm_directory_view_widget_to_file_operation_position (view, &pos);
+
 	fm_directory_view_new_file_with_initial_contents (
 		view, target_uri != NULL ? target_uri : container_uri,
 		/* Translator: This is the filename used for when you dnd text to a directory */
 		_("dropped text.txt"),
-		text);
+		text, &pos);
 
 	g_free (container_uri);
 }

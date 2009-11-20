@@ -53,6 +53,7 @@
 #define FM_ACTION_MOVE_TO_NEXT_PANE "Move to next pane"
 #define FM_ACTION_LOCATION_PASTE_FILES_INTO "LocationPasteFilesInto"
 #define FM_ACTION_NEW_LAUNCHER "New Launcher"
+#define FM_ACTION_NEW_LAUNCHER_DESKTOP "New Launcher Desktop"
 #define FM_ACTION_RENAME "Rename"
 #define FM_ACTION_DUPLICATE "Duplicate"
 #define FM_ACTION_CREATE_LINK "Create Link"

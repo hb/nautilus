@@ -51,7 +51,8 @@ typedef enum {
         ROOT_BUTTON,
         HOME_BUTTON,
         DESKTOP_BUTTON,
-	MOUNT_BUTTON
+	MOUNT_BUTTON,
+	DEFAULT_LOCATION_BUTTON,
 } ButtonType;
 
 #define BUTTON_DATA(x) ((ButtonData *)(x))
@@ -86,15 +87,10 @@ struct _ButtonData
         GtkWidget *label;
         guint ignore_changes : 1;
         guint file_is_hidden : 1;
+        guint fake_root : 1;
 
 	NautilusDragSlotProxyInfo drag_info;
 };
-
-/* This macro is used to check if a button can be used as a fake root.
- * All buttons in front of a fake root are automatically hidden when in a
- * directory below a fake root and replaced with the "<" arrow button.
- */
-#define BUTTON_IS_FAKE_ROOT(button) ((button)->type == HOME_BUTTON || (button)->type == MOUNT_BUTTON)
 
 G_DEFINE_TYPE (NautilusPathBar,
 	       nautilus_path_bar,
@@ -1340,15 +1336,15 @@ nautilus_path_bar_update_button_state (ButtonData *button_data,
 }
 
 static gboolean
-is_file_path_mounted_mount (GFile *location, ButtonData *button_data)
+setup_file_path_mounted_mount (GFile *location, ButtonData *button_data)
 {
 	GVolumeMonitor *volume_monitor;
-	GList 		      *mounts, *l;
-	GMount 	      *mount;
-	gboolean	       result;
+	GList *mounts, *l;
+	GMount *mount;
+	gboolean result;
 	GIcon *icon;
 	NautilusIconInfo *info;
-	GFile *root;
+	GFile *root, *default_location;
 
 	result = FALSE;
 	volume_monitor = g_volume_monitor_get ();
@@ -1356,11 +1352,9 @@ is_file_path_mounted_mount (GFile *location, ButtonData *button_data)
 	for (l = mounts; l != NULL; l = l->next) {
 		mount = l->data;
                 if (g_mount_is_shadowed (mount)) {
-			g_object_unref (mount);
 			continue;
                 }
 		if (result) {
-			g_object_unref (mount);
 			continue;
 		}
 		root = g_mount_get_root (mount);
@@ -1376,45 +1370,62 @@ is_file_path_mounted_mount (GFile *location, ButtonData *button_data)
 				g_object_unref (icon);
 				button_data->custom_icon = nautilus_icon_info_get_pixbuf_at_size (info, NAUTILUS_PATH_BAR_ICON_SIZE);
 				g_object_unref (info);
-				button_data->path = g_object_ref (location);
 				button_data->dir_name = g_mount_get_name (mount);
+				button_data->type = MOUNT_BUTTON;
+				button_data->fake_root = TRUE;
 			}
-			g_object_unref (mount);
 			g_object_unref (root);
-			continue;
+			break;
 		}
-		g_object_unref (mount);
+		default_location = g_mount_get_default_location (mount);
+		if (!g_file_equal (default_location, root) &&
+		    g_file_equal (location, default_location)) {
+			result = TRUE;
+			/* set mount specific details in button_data */
+			if (button_data) {
+				icon = g_mount_get_icon (mount);
+				if (icon == NULL) {
+					icon = g_themed_icon_new (NAUTILUS_ICON_FOLDER);
+				}
+				info = nautilus_icon_info_lookup (icon, NAUTILUS_PATH_BAR_ICON_SIZE);
+				g_object_unref (icon);
+				button_data->custom_icon = nautilus_icon_info_get_pixbuf_at_size (info, NAUTILUS_PATH_BAR_ICON_SIZE);
+				g_object_unref (info);
+				button_data->type = DEFAULT_LOCATION_BUTTON;
+				button_data->fake_root = TRUE;
+			}
+			g_object_unref (default_location);
+			g_object_unref (root);
+			break;
+		}
+		g_object_unref (default_location);
 		g_object_unref (root);
 	}
-	g_list_free (mounts);
+	eel_g_object_list_free (mounts);
 	return result;
 }
 
-static ButtonType
-find_button_type (NautilusPathBar  *path_bar,
-		  GFile *location,
-		  ButtonData       *button_data)
+static void
+setup_button_type (ButtonData       *button_data,
+		   NautilusPathBar  *path_bar,
+		   GFile *location)
 {
-
-
-        if (path_bar->root_path != NULL && g_file_equal (location, path_bar->root_path)) {
-                return ROOT_BUTTON;
-	}
-        if (path_bar->home_path != NULL && g_file_equal (location, path_bar->home_path)) {
-	       	return HOME_BUTTON;
-	}
-        if (path_bar->desktop_path != NULL && g_file_equal (location, path_bar->desktop_path)) {
+	if (path_bar->root_path != NULL && g_file_equal (location, path_bar->root_path)) {
+		button_data->type = ROOT_BUTTON;
+	} else if (path_bar->home_path != NULL && g_file_equal (location, path_bar->home_path)) {
+		button_data->type = HOME_BUTTON;
+		button_data->fake_root = TRUE;
+	} else if (path_bar->desktop_path != NULL && g_file_equal (location, path_bar->desktop_path)) {
 		if (!desktop_is_home) {
-                	return DESKTOP_BUTTON;
+			button_data->type = DESKTOP_BUTTON;
 		} else {
-			return NORMAL_BUTTON;
+			button_data->type = NORMAL_BUTTON;
 		}
+	} else if (setup_file_path_mounted_mount (location, button_data)) {
+		/* already setup */
+	} else {
+		button_data->type = NORMAL_BUTTON;
 	}
-	if (is_file_path_mounted_mount (location, button_data)) {
-		return MOUNT_BUTTON;
-	}	
-
- 	return NORMAL_BUTTON;
 }
 
 static void
@@ -1541,15 +1552,17 @@ button_data_file_changed (NautilusFile *file,
 	}
 	g_object_unref (location);
 
-	display_name = nautilus_file_get_display_name (file);
-	if (eel_strcmp (display_name, button_data->dir_name) != 0) {
-		g_free (button_data->dir_name);
-		button_data->dir_name = g_strdup (display_name);
+	/* MOUNTs use the GMount as the name, so don't update for those */
+	if (button_data->type != MOUNT_BUTTON) {
+		display_name = nautilus_file_get_display_name (file);
+		if (eel_strcmp (display_name, button_data->dir_name) != 0) {
+			g_free (button_data->dir_name);
+			button_data->dir_name = g_strdup (display_name);
+		}
+
+		g_free (display_name);
 	}
-
 	nautilus_path_bar_update_button_appearance (button_data);
-
-	g_free (display_name);
 }
 
 static ButtonData *
@@ -1573,7 +1586,7 @@ make_directory_button (NautilusPathBar  *path_bar,
         /* Is it a special button? */
         button_data = g_new0 (ButtonData, 1);
 
-        button_data->type = find_button_type (path_bar, path, button_data);
+        setup_button_type (button_data, path_bar, path);
         button_data->button = gtk_toggle_button_new ();
 	gtk_button_set_focus_on_click (GTK_BUTTON (button_data->button), FALSE);
 	/* TODO update button type when xdg directories change */
@@ -1590,6 +1603,7 @@ make_directory_button (NautilusPathBar  *path_bar,
                 case HOME_BUTTON:
                 case DESKTOP_BUTTON:
 		case MOUNT_BUTTON:
+		case DEFAULT_LOCATION_BUTTON:
                         button_data->label = gtk_label_new (NULL);
                         label_alignment = gtk_alignment_new (0.5, 0.5, 1.0, 1.0);
                         gtk_container_add (GTK_CONTAINER (label_alignment), button_data->label);
@@ -1618,18 +1632,20 @@ make_directory_button (NautilusPathBar  *path_bar,
 			      	  G_CALLBACK (label_size_request_cb), button_data);
 	}
 	
-	/* do not set these for mounts */
-	if (button_data->type != MOUNT_BUTTON) {
+	if (button_data->path == NULL) {
         	button_data->path = g_object_ref (path);
-		button_data->file = nautilus_file_ref (file);
+	}
+	if (button_data->dir_name == NULL) {
 		button_data->dir_name = nautilus_file_get_display_name (file);
+	}
+	if (button_data->file == NULL) {
+		button_data->file = nautilus_file_ref (file);
 		nautilus_file_monitor_add (button_data->file, button_data,
 					   NAUTILUS_FILE_ATTRIBUTES_FOR_ICON);
-		button_data->file_changed_signal_id = 
+		button_data->file_changed_signal_id =
 			g_signal_connect (button_data->file, "changed",
 					  G_CALLBACK (button_data_file_changed),
-					  button_data);  
-					   
+					  button_data);
 	}
 
         button_data->file_is_hidden = file_is_hidden;
@@ -1694,7 +1710,7 @@ nautilus_path_bar_check_parent_path (NautilusPathBar *path_bar,
 
 	      			button_data = list->data;
 	      			if (list->prev != NULL &&
-				    BUTTON_IS_FAKE_ROOT (button_data)) {
+				    button_data->fake_root) {
 		  			path_bar->fake_root = list;
 		  			break;
 				}
@@ -1754,7 +1770,7 @@ nautilus_path_bar_update_path (NautilusPathBar *path_bar,
                 new_buttons = g_list_prepend (new_buttons, button_data);
 
 		if (parent_file != NULL &&
-		    BUTTON_IS_FAKE_ROOT (button_data)) {
+		    button_data->fake_root) {
 			fake_root = new_buttons;
 		}
 		

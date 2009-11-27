@@ -50,6 +50,7 @@
 #include <eel/eel-canvas-rect-ellipse.h>
 #include <gdk/gdkkeysyms.h>
 #include <gtk/gtk.h>
+#include <gdk/gdkx.h>
 #include <glib/gi18n.h>
 #include <stdio.h>
 #include <string.h>
@@ -269,6 +270,7 @@ enum {
 	HANDLE_NETSCAPE_URL,
 	HANDLE_URI_LIST,
 	HANDLE_TEXT,
+	HANDLE_RAW,
 	PREVIEW,
 	SELECTION_CHANGED,
 	ICON_ADDED,
@@ -4132,13 +4134,22 @@ realize (GtkWidget *widget)
 	GtkWindow *window;
 	GdkBitmap *stipple;
 	GtkAdjustment *vadj, *hadj;
+	NautilusIconContainer *container;
 
 	GTK_WIDGET_CLASS (nautilus_icon_container_parent_class)->realize (widget);
 
-	/* Set up DnD.  */
-	nautilus_icon_dnd_init (NAUTILUS_ICON_CONTAINER (widget), NULL);
+	container = NAUTILUS_ICON_CONTAINER (widget);
 
-	setup_label_gcs (NAUTILUS_ICON_CONTAINER (widget));
+	/* Ensure that the desktop window is native so the background
+	   set on it is drawn by X. */
+	if (container->details->is_desktop) {
+		gdk_x11_drawable_get_xid (gtk_layout_get_bin_window (GTK_LAYOUT (widget)));
+	}
+
+	/* Set up DnD.  */
+	nautilus_icon_dnd_init (container, NULL);
+
+	setup_label_gcs (container);
 
  	/* make us the focused widget */
  	g_assert (GTK_IS_WINDOW (gtk_widget_get_toplevel (widget)));
@@ -4148,7 +4159,7 @@ realize (GtkWidget *widget)
 	stipple = eel_stipple_bitmap_for_screen (
 			gdk_drawable_get_screen (GDK_DRAWABLE (widget->window)));
 
-	nautilus_icon_dnd_set_stipple (NAUTILUS_ICON_CONTAINER (widget), stipple);
+	nautilus_icon_dnd_set_stipple (container, stipple);
 
 	hadj = gtk_layout_get_hadjustment (GTK_LAYOUT (widget));
 	g_signal_connect (hadj, "value_changed",
@@ -5845,6 +5856,22 @@ nautilus_icon_container_class_init (NautilusIconContainerClass *class)
 				GDK_TYPE_DRAG_ACTION,
 				G_TYPE_INT,
 				G_TYPE_INT);
+	signals[HANDLE_RAW]
+		= g_signal_new ("handle_raw",
+		                G_TYPE_FROM_CLASS (class),
+		                G_SIGNAL_RUN_LAST,
+		                G_STRUCT_OFFSET (NautilusIconContainerClass,
+						 handle_raw),
+		                NULL, NULL,
+		                nautilus_marshal_VOID__POINTER_INT_STRING_STRING_ENUM_INT_INT,
+		                G_TYPE_NONE, 7,
+				G_TYPE_POINTER,
+				G_TYPE_INT,
+				G_TYPE_STRING,
+				G_TYPE_STRING,
+				GDK_TYPE_DRAG_ACTION,
+				G_TYPE_INT,
+				G_TYPE_INT);
 	signals[GET_CONTAINER_URI] 
 		= g_signal_new ("get_container_uri",
 		                G_TYPE_FROM_CLASS (class),
@@ -7533,6 +7560,8 @@ nautilus_icon_container_invert_selection (NautilusIconContainer *container)
 		icon = p->data;
 		icon_toggle_selected (container, icon);
 	}
+
+	g_signal_emit (container, signals[SELECTION_CHANGED], 0);
 }
 
 
@@ -8275,9 +8304,12 @@ nautilus_icon_container_start_renaming_selected_item (NautilusIconContainer *con
 	int x, y, width;
 	int start_offset, end_offset;
 
-	/* Check if it already in renaming mode. */
+	/* Check if it already in renaming mode, if so - select all */
 	details = container->details;
 	if (details->renaming) {
+		eel_editable_label_select_region (EEL_EDITABLE_LABEL (details->rename_widget),
+						  0,
+						  -1);
 		return;
 	}
 

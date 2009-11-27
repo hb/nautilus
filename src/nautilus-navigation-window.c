@@ -96,8 +96,8 @@ static int side_pane_width_auto_value = 0;
 
 /* Forward and back buttons on the mouse */
 static gboolean mouse_extra_buttons = TRUE;
-static int mouse_forward_button = 8;
-static int mouse_back_button = 9;
+static int mouse_forward_button = 9;
+static int mouse_back_button = 8;
 
 static void add_sidebar_panels                       (NautilusNavigationWindow *window);
 static void side_panel_image_changed_callback        (NautilusSidebar          *side_panel,
@@ -401,9 +401,6 @@ setup_side_pane_width (NautilusNavigationWindow *window)
 
 	window->details->side_pane_width = side_pane_width_auto_value;
 
-	/* FIXME bugzilla.gnome.org 41245: Saved in pixels instead of in %? */
-        /* FIXME bugzilla.gnome.org 41245: No reality check on the value? */
-	
 	gtk_paned_set_position (GTK_PANED (window->details->content_paned), 
 				side_pane_width_auto_value);
 }

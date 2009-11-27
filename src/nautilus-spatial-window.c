@@ -683,6 +683,7 @@ location_button_clicked_callback (GtkWidget             *widget,
 
 		name = nautilus_file_get_display_name (file);
 		menu_item = gtk_image_menu_item_new_with_label (name);
+		gtk_image_menu_item_set_always_show_image (GTK_IMAGE_MENU_ITEM (menu_item), TRUE);
 		g_free (name);
 
 		if (first_item == NULL) {
@@ -743,6 +744,7 @@ location_button_clicked_callback (GtkWidget             *widget,
 	gtk_grab_remove (popup);
 	g_main_loop_unref (loop);
 	g_object_ref_sink (popup);
+	g_object_unref (popup);
 }
 
 static int
@@ -941,9 +943,19 @@ static const GtkActionEntry spatial_entries[] = {
                                  G_CALLBACK (action_search_callback) },
 };
 
+static const char* icon_entries[] = {
+	"/MenuBar/Other Menus/Places/Home",
+	"/MenuBar/Other Menus/Places/Go to Computer",
+	"/MenuBar/Other Menus/Places/Go to Templates",
+	"/MenuBar/Other Menus/Places/Go to Trash",
+	"/MenuBar/Other Menus/Places/Go to Network"
+};
+
 static void
 nautilus_spatial_window_init (NautilusSpatialWindow *window)
 {
+	NautilusWindow *win;
+	NautilusWindowPane *pane;
 	GtkRcStyle *rc_style;
 	GtkWidget *arrow;
 	GtkWidget *hbox, *vbox;
@@ -951,8 +963,8 @@ nautilus_spatial_window_init (NautilusSpatialWindow *window)
 	GtkUIManager *ui_manager;
 	GtkTargetList *targets;
 	const char *ui;
-	NautilusWindow *win;
-	NautilusWindowPane *pane;
+	int i;
+	GtkWidget *menuitem;
 
 	window->details = G_TYPE_INSTANCE_GET_PRIVATE (window,
 						       NAUTILUS_TYPE_SPATIAL_WINDOW,
@@ -1048,6 +1060,11 @@ nautilus_spatial_window_init (NautilusSpatialWindow *window)
 	
 	ui = nautilus_ui_string_get ("nautilus-spatial-window-ui.xml");
 	gtk_ui_manager_add_ui_from_string (ui_manager, ui, -1, NULL);
+
+	for (i = 0; i < G_N_ELEMENTS (icon_entries); i++) {
+		menuitem = gtk_ui_manager_get_widget (ui_manager, icon_entries[i]);
+		gtk_image_menu_item_set_always_show_image (GTK_IMAGE_MENU_ITEM (menuitem), TRUE);
+	}
 
 	nautilus_window_set_active_pane (win, pane);
 }

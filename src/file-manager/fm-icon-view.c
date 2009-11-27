@@ -470,6 +470,8 @@ should_show_file_on_screen (FMDirectoryView *view, NautilusFile *file)
 static void
 fm_icon_view_remove_file (FMDirectoryView *view, NautilusFile *file, NautilusDirectory *directory)
 {
+	FMIconView *icon_view;
+
 	/* This used to assert that 'directory == fm_directory_view_get_model (view)', but that
 	 * resulted in a lot of crash reports (bug #352592). I don't see how that trace happens.
 	 * It seems that somehow we get a files_changed event sent to the view from a directory
@@ -491,8 +493,14 @@ fm_icon_view_remove_file (FMDirectoryView *view, NautilusFile *file, NautilusDir
 		g_free (model_uri);
 	}
 	
-	if (nautilus_icon_container_remove (get_icon_container (FM_ICON_VIEW (view)),
+	icon_view = FM_ICON_VIEW (view);
+
+	if (nautilus_icon_container_remove (get_icon_container (icon_view),
 					    NAUTILUS_ICON_CONTAINER_ICON_DATA (file))) {
+		if (file == icon_view->details->audio_preview_file) {
+			preview_audio (icon_view, NULL, FALSE);
+		}
+
 		nautilus_file_unref (file);
 	}
 }
@@ -2764,6 +2772,15 @@ icon_view_handle_text (NautilusIconContainer *container, const char *text,
 					    text, target_uri, action, x, y);
 }
 
+static void
+icon_view_handle_raw (NautilusIconContainer *container, const char *raw_data,
+		       int length, const char *target_uri, const char *direct_save_uri,
+		       GdkDragAction action, int x, int y, FMIconView *view)
+{
+	fm_directory_view_handle_raw_drop (FM_DIRECTORY_VIEW (view),
+					    raw_data, length, target_uri, direct_save_uri, action, x, y);
+}
+
 static char *
 icon_view_get_first_visible_file (NautilusView *view)
 {
@@ -2996,6 +3013,8 @@ fm_icon_view_init (FMIconView *icon_view)
 				 G_CALLBACK (icon_view_handle_uri_list), icon_view, 0);
 	g_signal_connect_object (get_icon_container (icon_view), "handle_text",
 				 G_CALLBACK (icon_view_handle_text), icon_view, 0);
+	g_signal_connect_object (get_icon_container (icon_view), "handle_raw",
+				 G_CALLBACK (icon_view_handle_raw), icon_view, 0);
 }
 
 static NautilusView *
@@ -3007,7 +3026,6 @@ fm_icon_view_create (NautilusWindowSlotInfo *slot)
 			     "window-slot", slot,
 			     "compact", FALSE,
 			     NULL);
-	g_object_ref (view);
 	return NAUTILUS_VIEW (view);
 }
 
@@ -3020,7 +3038,6 @@ fm_compact_view_create (NautilusWindowSlotInfo *slot)
 			     "window-slot", slot,
 			     "compact", TRUE,
 			     NULL);
-	g_object_ref (view);
 	return NAUTILUS_VIEW (view);
 }
 

@@ -76,6 +76,7 @@ typedef struct {
 	GTimer *time;
 	GtkWindow *parent_window;
 	int screen_num;
+	int inhibit_cookie;
 	NautilusProgressInfo *progress;
 	GCancellable *cancellable;
 	GHashTable *skip_files;
@@ -116,6 +117,7 @@ typedef struct {
 	gboolean make_dir;
 	GFile *src;
 	char *src_data;
+	int length;
 	GdkPoint position;
 	gboolean has_position;
 	GFile *created_file;
@@ -177,6 +179,8 @@ typedef struct {
 #define NSEC_PER_SEC 1000000000
 #define NSEC_PER_MSEC 1000000
 
+#define MAXIMUM_DISPLAYED_FILE_NAME_LENGTH 50
+
 #define IS_IO_ERROR(__error, KIND) (((__error)->domain == G_IO_ERROR && (__error)->code == G_IO_ERROR_ ## KIND))
 
 #define SKIP _("_Skip")
@@ -187,6 +191,7 @@ typedef struct {
 #define REPLACE_ALL _("Replace _All")
 #define MERGE _("_Merge")
 #define MERGE_ALL _("Merge _All")
+#define COPY_FORCE _("Copy _Anyway")
 
 static void
 mark_desktop_file_trusted (CommonJob *common,
@@ -818,6 +823,14 @@ custom_basename_to_string (char *format, va_list va)
 		name = g_uri_escape_string (name, G_URI_RESERVED_CHARS_ALLOWED_IN_PATH, TRUE);
 		g_free (tmp);
 	}
+
+	/* Finally, if the string is too long, truncate it. */
+	if (name != NULL) {
+		tmp = name;
+		name = eel_str_middle_truncate (tmp, MAXIMUM_DISPLAYED_FILE_NAME_LENGTH);
+		g_free (tmp);
+	}
+
 	
 	return name;
 }
@@ -915,7 +928,7 @@ init_common (gsize job_size,
 	common->progress = nautilus_progress_info_new ();
 	common->cancellable = nautilus_progress_info_get_cancellable (common->progress);
 	common->time = g_timer_new ();
-
+	common->inhibit_cookie = -1;
 	common->screen_num = 0;
 	if (parent_window) {
 		screen = gtk_widget_get_screen (GTK_WIDGET (parent_window));
@@ -930,8 +943,12 @@ finalize_common (CommonJob *common)
 {
 	nautilus_progress_info_finish (common->progress);
 
-	g_timer_destroy (common->time);
+	if (common->inhibit_cookie != -1) {
+		nautilus_uninhibit_power_manager (common->inhibit_cookie);
+	}
 
+	common->inhibit_cookie = -1;
+	g_timer_destroy (common->time);
 	eel_remove_weak_pointer (&common->parent_window);
 	if (common->skip_files) {
 		g_hash_table_destroy (common->skip_files);
@@ -1243,6 +1260,12 @@ run_question (CommonJob *job,
 }
 
 static void
+inhibit_power_manager (CommonJob *job, const char *message)
+{
+	job->inhibit_cookie = nautilus_inhibit_power_manager (message);
+}
+
+static void
 abort_job (CommonJob *job)
 {
 	g_cancellable_cancel (job->cancellable);
@@ -1375,7 +1398,7 @@ report_delete_progress (CommonJob *job,
 
 	now = g_thread_gettime ();
 	if (transfer_info->last_report_time != 0 &&
-	    ABS (transfer_info->last_report_time - now) < 100 * NSEC_PER_MSEC) {
+	    ABS ((gint64)(transfer_info->last_report_time - now)) < 100 * NSEC_PER_MSEC) {
 		return;
 	}
 	transfer_info->last_report_time = now;
@@ -1931,6 +1954,12 @@ trash_or_delete_internal (GList                  *files,
 	job->user_cancel = FALSE;
 	job->done_callback = done_callback;
 	job->done_callback_data = done_callback_data;
+
+	if (try_trash) {
+		inhibit_power_manager ((CommonJob *)job, _("Trashing Files"));
+	} else {
+		inhibit_power_manager ((CommonJob *)job, _("Deleting Files"));
+	}
 	
 	g_io_scheduler_push_job (delete_job,
 			   job,
@@ -2738,13 +2767,17 @@ verify_destination (CommonJob *job,
 						secondary,
 						details,
 						FALSE,
-						GTK_STOCK_CANCEL, RETRY,
+						GTK_STOCK_CANCEL,
+						COPY_FORCE,
+						RETRY,
 						NULL);
 			
 			if (response == 0 || response == GTK_RESPONSE_DELETE_EVENT) {
 				abort_job (job);
-			} else if (response == 1) {
+			} else if (response == 2) {
 				goto retry;
+			} else if (response == 1) {
+				/* We are forced to copy - just fall through ... */
 			} else {
 				g_assert_not_reached ();
 			}
@@ -2793,7 +2826,7 @@ report_copy_progress (CopyMoveJob *copy_job,
 	now = g_thread_gettime ();
 	
 	if (transfer_info->last_report_time != 0 &&
-	    ABS (transfer_info->last_report_time - now) < 100 * NSEC_PER_MSEC) {
+	    ABS ((gint64)(transfer_info->last_report_time - now)) < 100 * NSEC_PER_MSEC) {
 		return;
 	}
 	transfer_info->last_report_time = now;
@@ -4396,6 +4429,8 @@ nautilus_file_operations_copy (GList *files,
 	}
 	job->debuting_files = g_hash_table_new_full (g_file_hash, (GEqualFunc)g_file_equal, g_object_unref, NULL);
 
+	inhibit_power_manager ((CommonJob *)job, _("Copying Files"));
+
 	g_io_scheduler_push_job (copy_job,
 			   job,
 			   NULL, /* destroy notify */
@@ -4935,6 +4970,8 @@ nautilus_file_operations_move (GList *files,
 		job->n_icon_positions = relative_item_points->len;
 	}
 	job->debuting_files = g_hash_table_new_full (g_file_hash, (GEqualFunc)g_file_equal, g_object_unref, NULL);
+
+	inhibit_power_manager ((CommonJob *)job, _("Moving Files"));
 
 	g_io_scheduler_push_job (move_job,
 				 job,
@@ -5602,6 +5639,7 @@ create_job (GIOSchedulerJob *io_job,
 	char *primary, *secondary, *details;
 	int response;
 	char *data;
+	int length;
 	GFileOutputStream *out;
 	gboolean handled_invalid_filename;
 	int max_length;
@@ -5675,8 +5713,10 @@ create_job (GIOSchedulerJob *io_job,
 					   &error);
 		} else {
 			data = "";
+			length = 0;
 			if (job->src_data) {
 				data = job->src_data;
+				length = job->length;
 			}
 
 			out = g_file_create (dest,
@@ -5685,7 +5725,7 @@ create_job (GIOSchedulerJob *io_job,
 					     &error);
 			if (out) {
 				res = g_output_stream_write_all (G_OUTPUT_STREAM (out),
-								 data, strlen (data),
+								 data, length,
 								 NULL,
 								 common->cancellable,
 								 &error);
@@ -5908,6 +5948,7 @@ nautilus_file_operations_new_file (GtkWidget *parent_view,
 				   const char *parent_dir,
 				   const char *target_filename,
 				   const char *initial_contents,
+				   int length,
 				   NautilusCreateCallback done_callback,
 				   gpointer done_callback_data)
 {
@@ -5927,7 +5968,8 @@ nautilus_file_operations_new_file (GtkWidget *parent_view,
 		job->position = *target_point;
 		job->has_position = TRUE;
 	}
-	job->src_data = g_strdup (initial_contents);
+	job->src_data = g_memdup (initial_contents, length);
+	job->length = length;
 	job->filename = g_strdup (target_filename);
 
 	g_io_scheduler_push_job (create_job,
@@ -6050,6 +6092,8 @@ nautilus_file_operations_empty_trash (GtkWidget *parent_view)
 	job->trash_dirs = g_list_prepend (job->trash_dirs,
 					  g_file_new_for_uri ("trash:"));
 	job->should_confirm = TRUE;
+
+	inhibit_power_manager ((CommonJob *)job, _("Emptying Trash"));
 	
 	g_io_scheduler_push_job (empty_trash_job,
 			   job,

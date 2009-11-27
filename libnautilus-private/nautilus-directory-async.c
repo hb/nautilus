@@ -303,6 +303,48 @@ request_counter_remove_request (RequestCounter counter,
 	}
 }
 
+#if 0
+static void
+nautilus_directory_verify_request_counts (NautilusDirectory *directory)
+{
+	GList *l;
+	RequestCounter counters;
+	int i;
+	gboolean fail;
+
+	fail = FALSE;
+	for (i = 0; i < REQUEST_TYPE_LAST; i ++) {
+		counters[i] = 0;
+	}
+	for (l = directory->details->monitor_list; l != NULL; l = l->next) {
+		Monitor *monitor = l->data;
+		request_counter_add_request (counters, monitor->request);
+	}
+	for (i = 0; i < REQUEST_TYPE_LAST; i ++) {
+		if (counters[i] != directory->details->monitor_counters[i]) {
+			g_warning ("monitor counter for %i is wrong, expecting %d but found %d",
+				   i, counters[i], directory->details->monitor_counters[i]);
+			fail = TRUE;
+		}
+	}
+	for (i = 0; i < REQUEST_TYPE_LAST; i ++) {
+		counters[i] = 0;
+	}
+	for (l = directory->details->call_when_ready_list; l != NULL; l = l->next) {
+		ReadyCallback *callback = l->data;
+		request_counter_add_request (counters, callback->request);
+	}
+	for (i = 0; i < REQUEST_TYPE_LAST; i ++) {
+		if (counters[i] != directory->details->call_when_ready_counters[i]) {
+			g_warning ("call when ready counter for %i is wrong, expecting %d but found %d",
+				   i, counters[i], directory->details->call_when_ready_counters[i]);
+			fail = TRUE;
+		}
+	}
+	g_assert (!fail);
+}
+#endif
+
 /* Start a job. This is really just a way of limiting the number of
  * async. requests that we issue at any given time. Without this, the
  * number of requests is unbounded.
@@ -604,7 +646,7 @@ remove_monitor_link (NautilusDirectory *directory,
 		     GList *link)
 {
 	Monitor *monitor;
-	
+
 	if (link != NULL) {
 		monitor = link->data;
 		request_counter_remove_request (directory->details->monitor_counters,
@@ -1148,6 +1190,8 @@ nautilus_directory_remove_file_monitors (NautilusDirectory *directory,
 		if (monitor->file == file) {
 			*list = g_list_remove_link (*list, node);
 			result = g_list_concat (node, result);
+			request_counter_remove_request (directory->details->monitor_counters,
+							monitor->request);
 		}
 	}
 
@@ -1164,6 +1208,8 @@ nautilus_directory_add_file_monitors (NautilusDirectory *directory,
 				      FileMonitors *monitors)
 {
 	GList **list;
+	GList *l;
+	Monitor *monitor;
 
 	g_assert (NAUTILUS_IS_DIRECTORY (directory));
 	g_assert (NAUTILUS_IS_FILE (file));
@@ -1171,6 +1217,12 @@ nautilus_directory_add_file_monitors (NautilusDirectory *directory,
 
 	if (monitors == NULL) {
 		return;
+	}
+
+	for (l = (GList *)monitors; l != NULL; l = l->next) {
+		monitor = l->data;
+		request_counter_add_request (directory->details->monitor_counters,
+					     monitor->request);
 	}
 
 	list = &directory->details->monitor_list;
@@ -1283,7 +1335,7 @@ nautilus_directory_call_when_ready_internal (NautilusDirectory *directory,
 	g_assert (directory == NULL || NAUTILUS_IS_DIRECTORY (directory));
 	g_assert (file == NULL || NAUTILUS_IS_FILE (file));
 	g_assert (file != NULL || directory_callback != NULL);
-	
+
 	/* Construct a callback object. */
 	callback.active = TRUE;
 	callback.file = file;
@@ -1700,9 +1752,8 @@ lacks_mount (NautilusFile *file)
 		 (file->details->type == G_FILE_TYPE_DIRECTORY &&
 		  nautilus_file_is_self_owned (file)) ||
 		 
-		 /* Mountable with a target_uri, could be a mountpoint */
-		 (file->details->type == G_FILE_TYPE_MOUNTABLE &&
-		  file->details->activation_uri != NULL)
+		 /* Mountable, could be a mountpoint */
+		 (file->details->type == G_FILE_TYPE_MOUNTABLE)
 
 		 )
 		);
@@ -3957,7 +4008,7 @@ thumbnail_start (NautilusDirectory *directory,
 {
 	GFile *location;
 	ThumbnailState *state;
-	
+
 	if (directory->details->thumbnail_state != NULL) {
 		*doing_io = TRUE;
 		return;
@@ -3988,7 +4039,7 @@ thumbnail_start (NautilusDirectory *directory,
 	}
 	
 	directory->details->thumbnail_state = state;
-	
+
 	g_file_load_contents_async (location,
 				    state->cancellable,
 				    thumbnail_read_callback,

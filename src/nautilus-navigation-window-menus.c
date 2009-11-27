@@ -78,6 +78,11 @@ should_open_in_new_tab (void)
 	GdkEvent *event;
 
 	event = gtk_get_current_event ();
+
+	if (event == NULL) {
+		return FALSE;
+	}
+
 	if (event->type == GDK_BUTTON_PRESS || event->type == GDK_BUTTON_RELEASE) {
 		return event->button.button == 2;
 	}
@@ -398,6 +403,15 @@ connect_proxy_cb (GtkActionGroup *action_group,
 	gtk_label_set_max_width_chars (label, MENU_ITEM_MAX_WIDTH_CHARS);
 }
 
+static const char* icon_entries[] = {
+	"/MenuBar/Other Menus/Go/Home",
+	"/MenuBar/Other Menus/Go/Computer",
+	"/MenuBar/Other Menus/Go/Go to Templates",
+	"/MenuBar/Other Menus/Go/Go to Trash",
+	"/MenuBar/Other Menus/Go/Go to Network",
+	"/MenuBar/Other Menus/Go/Go to Location"
+};
+
 /**
  * refresh_go_menu:
  * 
@@ -409,7 +423,9 @@ refresh_go_menu (NautilusNavigationWindow *window)
 {
 	GtkUIManager *ui_manager;
 	GList *node;
+	GtkWidget *menuitem;
 	int index;
+	int i;
 	
 	g_assert (NAUTILUS_IS_NAVIGATION_WINDOW (window));
 
@@ -430,6 +446,15 @@ refresh_go_menu (NautilusNavigationWindow *window)
 					    window->details->go_menu_action_group,
 					    -1);
 	g_object_unref (window->details->go_menu_action_group);
+
+	for (i = 0; i < G_N_ELEMENTS (icon_entries); i++) {
+		menuitem = gtk_ui_manager_get_widget (
+				ui_manager,
+				icon_entries[i]);
+
+		gtk_image_menu_item_set_always_show_image (
+				GTK_IMAGE_MENU_ITEM (menuitem), TRUE);
+	}
 	
 	/* Add in a new set of history items. */
 	for (node = nautilus_get_history_list (), index = 0;

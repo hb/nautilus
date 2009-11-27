@@ -19,11 +19,11 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: nautilus HEAD\n"
+"Project-Id-Version: nautilus MASTER\n"
 "Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
 "product=nautilus&component=Internationalization (i18n)\n"
-"POT-Creation-Date: 2009-07-18 14:34+0000\n"
-"PO-Revision-Date: 2009-07-20 15:16+0300\n"
+"POT-Creation-Date: 2009-10-06 15:12+0000\n"
+"PO-Revision-Date: 2009-10-09 20:49+0300\n"
 "Last-Translator: Ivar Smolin <okul@linux.ee>\n"
 "Language-Team: Estonian <gnome-et@linux.ee>\n"
 "MIME-Version: 1.0\n"
@@ -37,7 +37,7 @@ msgstr "Fail pole korrektne .desktop fail"
 
 #, c-format
 msgid "Unrecognized desktop file Version '%s'"
-msgstr "Tundmatu töölauafaili verisoon '%s'"
+msgstr "Tundmatu töölauafaili versioon '%s'"
 
 #, c-format
 msgid "Starting %s"
@@ -53,7 +53,8 @@ msgstr "Tundmatu käivitusvalik: %d"
 
 #, c-format
 msgid "Can't pass document URIs to a 'Type=Link' desktop entry"
-msgstr "Dokumendi URId pole võimalik edastada 'Type=Link' töölauakirjele"
+msgstr ""
+"Dokumendi URI-sid pole võimalik 'Liik=Viit' tüüpi töölauakirjetele edastada"
 
 #, c-format
 msgid "Not a launchable item"
@@ -1458,6 +1459,9 @@ msgstr "L_iida"
 msgid "Merge _All"
 msgstr "Liida _kõik"
 
+msgid "Copy _Anyway"
+msgstr "Ko_peeri ikka"
+
 #, c-format
 msgid "%'d second"
 msgid_plural "%'d seconds"
@@ -1706,6 +1710,12 @@ msgstr ""
 msgid "The file \"%B\" cannot be moved to the trash."
 msgstr "Faili \"%B\" pole võimalik prügikasti visata."
 
+msgid "Trashing Files"
+msgstr "Failide viskamine prügikasti"
+
+msgid "Deleting Files"
+msgstr "Failide kustutamine"
+
 msgid "Unable to eject %V"
 msgstr "%V väljastamine pole võimalik"
 
@@ -1811,10 +1821,10 @@ msgid "The destination is read-only."
 msgstr "Sihtkoht on kirjutuskaitsega."
 
 msgid "Moving \"%B\" to \"%B\""
-msgstr "\"%B\" liigutamine sihtkohta \"%B\""
+msgstr "\"%B\" ümbertõstmine sihtkohta \"%B\""
 
 msgid "Copying \"%B\" to \"%B\""
-msgstr "\"%B\" kopeerimine asukohta \"%B\""
+msgstr "\"%B\" kopeerimine sihtkohta \"%B\""
 
 msgid "Duplicating \"%B\""
 msgstr "\"%B\" dubleerimine"
@@ -1970,6 +1980,9 @@ msgstr "%F all juba olemasolevat sama nimega faili pole võimalik eemaldada."
 msgid "There was an error copying the file into %F."
 msgstr "Faili kopeerimisel %F alla tekkis viga."
 
+msgid "Copying Files"
+msgstr "Failide kopeerimine"
+
 msgid "Preparing to Move to \"%B\""
 msgstr "Ettevalmistused ümbertõstmiseks sihtkohta \"%B\""
 
@@ -1991,6 +2004,9 @@ msgstr ""
 #, c-format
 msgid "There was an error moving the file into %F."
 msgstr "Faili ümbertõstmisel %F alla tekkis viga."
+
+msgid "Moving Files"
+msgstr "Failide liigutamine"
 
 msgid "Creating links in \"%B\""
 msgstr "\"%B\" alla viitade loomine"
@@ -2034,6 +2050,9 @@ msgstr "Viga faili %B loomisel."
 #, c-format
 msgid "There was an error creating the directory in %F."
 msgstr "%F sisse kataloogi loomisel tekkis viga."
+
+msgid "Emptying Trash"
+msgstr "Prügikasti tühjendamine"
 
 msgid "Unable to mark launcher trusted (executable)"
 msgstr ""
@@ -2495,6 +2514,9 @@ msgstr "Tundmatut tüüpi fail"
 msgid "There is no application installed for %s files"
 msgstr "Failitüübi %s jaoks pole ühtegi rakendust paigaldatud"
 
+msgid "_Select Application"
+msgstr "_Vali rakendus"
+
 msgid "There was an internal error trying to search for applications:"
 msgstr "Rakenduse otsimisel tekkis sisemine viga:"
 
@@ -2616,9 +2638,48 @@ msgstr "_Sirvi..."
 msgid "_Open"
 msgstr "_Ava"
 
-#, c-format
-msgid "Open %s and other files of type \"%s\" with:"
+#. first %s is a filename and second %s is a file extension
+#, fuzzy, c-format
+#| msgid "Open %s and other files of type \"%s\" with:"
+msgid "Open %s and other %s document with:"
 msgstr "Faili %s ja teisi \"%s\"-liigilisi faile tuleb avada rakendusega:"
+
+#. the %s here is a file name
+#. %s is a filename
+#, fuzzy, c-format
+#| msgid "Open With"
+msgid "Open %s with:"
+msgstr "Avamine rakendusega"
+
+#, fuzzy, c-format
+#| msgid "There is no application installed for %s files"
+msgid "_Remember this application for %s documents"
+msgstr "Failitüübi %s jaoks pole ühtegi rakendust paigaldatud"
+
+#. Only in add mode - the %s here is a file extension
+#, fuzzy, c-format
+#| msgid "Open all files of type \"%s\" with:"
+msgid "Open all %s documents with:"
+msgstr "Kõik \"%s\" liigi alla kuuluvad failid avatakse rakendusega:"
+
+#. First %s is a filename, second is a description
+#. * of the type, eg "plain text document"
+#, fuzzy, c-format
+#| msgid "Open %s and other files of type \"%s\" with:"
+msgid "Open %s and other \"%s\" files with:"
+msgstr "Faili %s ja teisi \"%s\"-liigilisi faile tuleb avada rakendusega:"
+
+#. %s is a file type description
+#, fuzzy, c-format
+#| msgid "There is no application installed for %s files"
+msgid "_Remember this application for \"%s\" files"
+msgstr "Failitüübi %s jaoks pole ühtegi rakendust paigaldatud"
+
+#. Only in add mode
+#, fuzzy, c-format
+#| msgid "Open all files of type \"%s\" with:"
+msgid "Open all \"%s\" files with:"
+msgstr "Kõik \"%s\" liigi alla kuuluvad failid avatakse rakendusega:"
 
 msgid "_Add"
 msgstr "L_isa"
@@ -2898,7 +2959,7 @@ msgid "The folder \"%s\" contains more files than Nautilus can handle."
 msgstr "Kataloog \"%s\" sisaldab rohkem faile, kui Nautilus suudab käsitleda."
 
 msgid "Some files will not be displayed."
-msgstr "Osasid faile ei kuvata."
+msgstr "Mõningaid faile ei kuvata."
 
 #, c-format
 msgid "Open with %s"
@@ -3000,10 +3061,8 @@ msgstr "Asukohta pole võimalik lahti haakida"
 msgid "Unable to eject location"
 msgstr "Asukohta pole võimalik väljastada"
 
-#, fuzzy
-#| msgid "Unable to stop %s"
 msgid "Unable to stop drive"
-msgstr "%s seiskamine pole võimalik"
+msgstr "Ketta seiskamine pole võimalik"
 
 #, c-format
 msgid "Connect to Server %s"
@@ -3107,10 +3166,8 @@ msgstr "Iga valitud kirje avamine kataloogiaknas"
 
 #. name, stock id
 #. label, accelerator
-#, fuzzy
-#| msgid "Open with Other _Application..."
 msgid "Other _Application..."
-msgstr "_Ava mõne muu rakendusega..."
+msgstr "_Muu rakendus..."
 
 #. tooltip
 msgid "Choose another application with which to open the selected item"
@@ -3312,10 +3369,8 @@ msgid "_Detect Media"
 msgstr "_Tuvasta meedia"
 
 #. tooltip
-#, fuzzy
-#| msgid "Connect to the selected drive"
 msgid "Detect media in the selected drive"
-msgstr "Ühendab valitud kettale"
+msgstr "Tuvastab andmekandja valitud seadmes"
 
 #. tooltip
 msgid "Mount the volume associated with the open folder"
@@ -3482,8 +3537,8 @@ msgid_plural "Move the selected items out of the trash"
 msgstr[0] "Valitud kirje prügikastist väljatõstmine"
 msgstr[1] "Valitud kirjete prügikastist väljatõstmine"
 
-msgid "Start the select drive"
-msgstr "Käivitab valitud ketta"
+msgid "Start the selected drive"
+msgstr "Valitud kettaseadme käivitamine"
 
 msgid "Connect to the selected drive"
 msgstr "Ühendab valitud kettale"
@@ -3558,9 +3613,6 @@ msgstr "Avatud kataloogiga seotud mitmekettaseadme seiskamine"
 msgid "Lock the drive associated with the open folder"
 msgstr "Avatud kataloogiga seotud kettaseadme lukustamine"
 
-msgid "Start the selected drive"
-msgstr "Valitud kettaseadme käivitamine"
-
 #. add the "open in new window" menu item
 msgid "Open in New _Window"
 msgstr "Ava uues _aknas"
@@ -3585,10 +3637,9 @@ msgstr "Avatud kataloogi jäädavalt kustutamine"
 msgid "Move the open folder to the Trash"
 msgstr "Avatud kataloogi prügikasti viskamine"
 
-#, fuzzy, c-format
-#| msgid "Open with %s"
+#, c-format
 msgid "_Open with %s"
-msgstr "Ava programmiga %s"
+msgstr "_Ava programmiga %s"
 
 #, c-format
 msgid "Open in %'d New _Window"
@@ -4100,7 +4151,7 @@ msgid "Owner:"
 msgstr "Omanik:"
 
 msgid "_Group:"
-msgstr "_Grupp:"
+msgstr "G_rupp:"
 
 msgid "Group:"
 msgstr "Grupp:"
@@ -4955,8 +5006,26 @@ msgstr "Märkmed"
 msgid "Show Notes"
 msgstr "Näita märkmeid"
 
+msgid "Open the contents of your desktop in a folder"
+msgstr "Töölaua avamine kaustana"
+
+msgid "Open the contents of the File System"
+msgstr "Failisüsteemi sisukorra avamine"
+
 msgid "Network"
 msgstr "Võrk"
+
+msgid "Browse the contents of the network"
+msgstr "Võrgus olevate ressursside sirvimine"
+
+#, c-format
+msgid "Mount and open %s"
+msgstr ""
+
+#, fuzzy
+#| msgid "Open with %s"
+msgid "Open the trash"
+msgstr "Ava programmiga %s"
 
 #. start() for type G_DRIVE_START_STOP_TYPE_SHUTDOWN is normally not used
 msgid "_Power On"
@@ -5585,6 +5654,9 @@ msgstr "Suurendus"
 
 msgid "Set the zoom level of the current view"
 msgstr "Praeguse vaate suurendusastme seadmine"
+
+#~ msgid "Start the select drive"
+#~ msgstr "Käivitab valitud ketta"
 
 #~ msgid "Open with \"%s\""
 #~ msgstr "Ava programmiga \"%s\""

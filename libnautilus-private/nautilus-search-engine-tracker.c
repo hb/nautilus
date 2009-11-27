@@ -23,9 +23,14 @@
 
 #include <config.h>
 #include "nautilus-search-engine-tracker.h"
-#include <tracker.h>
 #include <eel/eel-gtk-macros.h>
 #include <eel/eel-glib-extensions.h>
+
+#ifdef HAVE_TRACKER_0_7
+#include <libtracker-client/tracker.h>
+#else
+#include <tracker.h>
+#endif
 
 
 
@@ -91,7 +96,11 @@ search_callback (char **results, GError *error, gpointer user_data)
 		
 		char *uri;
 
+#ifdef HAVE_TRACKER_0_7
+		uri = g_strdup ((char *)*results_p);
+#else
 		uri = g_filename_to_uri ((char *)*results_p, NULL, NULL);
+#endif
 		if (uri) {
 			hit_uris = g_list_prepend (hit_uris, (char *)uri);
 		}
@@ -101,7 +110,6 @@ search_callback (char **results, GError *error, gpointer user_data)
 	nautilus_search_engine_finished (NAUTILUS_SEARCH_ENGINE (tracker));
 	g_strfreev  (results);
 	eel_g_list_free_deep (hit_uris);
-
 }
 
 
@@ -131,7 +139,11 @@ nautilus_search_engine_tracker_start (NautilusSearchEngine *engine)
 	location_uri = nautilus_query_get_location (tracker->details->query);
 
 	if (location_uri) {
+#ifdef HAVE_TRACKER_0_7
+		location = g_strdup (location_uri);
+#else
 		location = g_filename_from_uri (location_uri, NULL, NULL);
+#endif
 		g_free (location_uri);
 	} else {
 		location = NULL;
@@ -258,13 +270,19 @@ nautilus_search_engine_tracker_new (void)
 {
 	NautilusSearchEngineTracker *engine;
 	TrackerClient *tracker_client;
-	GError *err = NULL;
 
-	tracker_client =  tracker_connect (FALSE);
+#ifdef HAVE_TRACKER_0_7
+	tracker_client = tracker_connect (FALSE, -1);
+#else
+	tracker_client = tracker_connect (FALSE);
+#endif
 
 	if (!tracker_client) {
 		return NULL;
 	}
+
+#ifndef HAVE_TRACKER_0_7
+	GError *err = NULL;
 
 	tracker_get_version (tracker_client, &err);
 
@@ -273,6 +291,7 @@ nautilus_search_engine_tracker_new (void)
 		tracker_disconnect (tracker_client);
 		return NULL;
 	}
+#endif
 
 	engine = g_object_new (NAUTILUS_TYPE_SEARCH_ENGINE_TRACKER, NULL);
 

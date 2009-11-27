@@ -690,9 +690,36 @@ button_press_callback (GtkWidget *widget, GdkEventButton *event, gpointer callba
 				if (view->details->row_selected_on_button_down) {
 					call_parent = on_expander;
 					view->details->ignore_button_release = call_parent;
-				} else if  ((event->state & GDK_CONTROL_MASK) != 0) {
+				} else if ((event->state & GDK_CONTROL_MASK) != 0) {
+					GList *selected_rows;
+					GList *l;
+
 					call_parent = FALSE;
-					gtk_tree_selection_select_path (selection, path);
+					if ((event->state & GDK_SHIFT_MASK) != 0) {
+						GtkTreePath *cursor;
+						gtk_tree_view_get_cursor (tree_view, &cursor, NULL);
+						if (cursor != NULL) {
+							gtk_tree_selection_select_range (selection, cursor, path);
+						} else {
+							gtk_tree_selection_select_path (selection, path);
+						}
+					} else {
+						gtk_tree_selection_select_path (selection, path);
+					}
+					selected_rows = gtk_tree_selection_get_selected_rows (selection, NULL);
+
+					/* This unselects everything */
+					gtk_tree_view_set_cursor (tree_view, path, NULL, FALSE);
+
+					/* So select it again */
+					l = selected_rows;
+					while (l != NULL) {
+						GtkTreePath *p = l->data;
+						l = l->next;
+						gtk_tree_selection_select_path (selection, p);
+						gtk_tree_path_free (p);
+					}
+					g_list_free (selected_rows);
 				} else {
 					view->details->ignore_button_release = on_expander;
 				}
@@ -730,6 +757,7 @@ button_press_callback (GtkWidget *widget, GdkEventButton *event, gpointer callba
 		/* Deselect if people click outside any row. It's OK to
 		   let default code run; it won't reselect anything. */
 		gtk_tree_selection_unselect_all (gtk_tree_view_get_selection (tree_view));
+		tree_view_class->button_press_event (widget, event);
 
 		if (event->button == 3) {
 			do_popup_menu (widget, view, event);
@@ -1106,6 +1134,7 @@ cell_renderer_edited (GtkCellRendererText *cell,
 		g_object_set (G_OBJECT (view->details->file_name_cell),
 			      "editable", FALSE,
 			      NULL);
+		fm_directory_view_unfreeze_updates (FM_DIRECTORY_VIEW (view));
 		return;
 	}
 	
@@ -1188,6 +1217,16 @@ list_view_handle_text (NautilusTreeViewDragDest *dest, const char *text,
 {
 	fm_directory_view_handle_text_drop (FM_DIRECTORY_VIEW (view),
 					    text, target_uri, action, x, y);
+}
+
+static void
+list_view_handle_raw (NautilusTreeViewDragDest *dest, const char *raw_data,
+		       int length, const char *target_uri, const char *direct_save_uri,
+		       GdkDragAction action, int x, int y, FMListView *view)
+{
+	fm_directory_view_handle_raw_drop (FM_DIRECTORY_VIEW (view),
+					    raw_data, length, target_uri, direct_save_uri,
+					    action, x, y);
 }
 
 static void
@@ -1385,6 +1424,8 @@ create_and_set_up_tree_view (FMListView *view)
 				 G_CALLBACK (list_view_handle_uri_list), view, 0);
 	g_signal_connect_object (view->details->drag_dest, "handle_text",
 				 G_CALLBACK (list_view_handle_text), view, 0);
+	g_signal_connect_object (view->details->drag_dest, "handle_raw",
+				 G_CALLBACK (list_view_handle_raw), view, 0);
 
 	g_signal_connect_object (gtk_tree_view_get_selection (view->details->tree_view),
 				 "changed",
@@ -1460,7 +1501,7 @@ create_and_set_up_tree_view (FMListView *view)
 			view->details->pixbuf_cell = (GtkCellRendererPixbuf *)cell;
 			
 			view->details->file_name_column = gtk_tree_view_column_new ();
-			g_object_ref (view->details->file_name_column);
+			g_object_ref_sink (view->details->file_name_column);
 			view->details->file_name_column_num = column_num;
 			
 			g_hash_table_insert (view->details->columns,
@@ -1498,7 +1539,7 @@ create_and_set_up_tree_view (FMListView *view)
 									   cell,
 									   "text", column_num,
 									   NULL);
-			g_object_ref (column);
+			g_object_ref_sink (column);
 			gtk_tree_view_column_set_sort_column_id (column, column_num);
 			g_hash_table_insert (view->details->columns, 
 					     g_strdup (name), 
@@ -1562,6 +1603,7 @@ get_visible_columns (FMListView *list_view)
 		g_ptr_array_add (res, NULL);
 
 		ret = (char **) g_ptr_array_free (res, FALSE);
+		g_list_free (visible_columns);
 	}
 
 	return ret ? ret : g_strdupv (default_visible_columns_auto_value);
@@ -1593,6 +1635,7 @@ get_column_order (FMListView *list_view)
 		g_ptr_array_add (res, NULL);
 
 		ret = (char **) g_ptr_array_free (res, FALSE);
+		g_list_free (column_order);
 	}
 
 	return ret ? ret : g_strdupv (default_visible_columns_auto_value);
@@ -2078,10 +2121,10 @@ column_chooser_changed_callback (NautilusColumnChooser *chooser,
 					 list);
 	g_list_free (list);
 
+	apply_columns_settings (view, column_order, visible_columns);
+
 	g_strfreev (visible_columns);
 	g_strfreev (column_order);
-
-	set_columns_settings_from_metadata_and_preferences (view);
 }
 
 static void
@@ -2391,7 +2434,7 @@ static void
 fm_list_view_bump_zoom_level (FMDirectoryView *view, int zoom_increment)
 {
 	FMListView *list_view;
-	NautilusZoomLevel new_level;
+	gint new_level;
 
 	g_return_if_fail (FM_IS_LIST_VIEW (view));
 
@@ -2470,9 +2513,12 @@ fm_list_view_start_renaming_file (FMDirectoryView *view,
 	
 	list_view = FM_LIST_VIEW (view);
 	
-	/* Don't start renaming if another rename in this listview is
-	 * already in progress. */
+	/* Select all if we are in renaming mode already */
 	if (list_view->details->file_name_column && list_view->details->file_name_column->editable_widget) {
+		gtk_editable_select_region (
+				GTK_EDITABLE (list_view->details->file_name_column->editable_widget),
+				0,
+				-1);
 		return;
 	}
 
@@ -2906,7 +2952,6 @@ fm_list_view_create (NautilusWindowSlotInfo *slot)
 	view = g_object_new (FM_TYPE_LIST_VIEW,
 			     "window-slot", slot,
 			     NULL);
-	g_object_ref (view);
 	return NAUTILUS_VIEW (view);
 }
 

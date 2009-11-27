@@ -153,20 +153,6 @@ activate_nth_short_list_item (NautilusNavigationWindowPane *pane, guint index)
 }
 
 static void
-restore_focus_widget (NautilusNavigationWindow *window)
-{
-	if (window->details->last_focus_widget != NULL) {
-		if (NAUTILUS_IS_VIEW (window->details->last_focus_widget)) {
-			nautilus_view_grab_focus (NAUTILUS_VIEW (window->details->last_focus_widget));
-		} else {
-			gtk_widget_grab_focus (window->details->last_focus_widget);
-		}
-
-		nautilus_navigation_window_unset_focus_widget (window);
-	}
-}
-
-static void
 view_as_menu_switch_views_callback (GtkComboBox *combo_box, NautilusNavigationWindowPane *pane)
 {         
 	int active;
@@ -226,8 +212,8 @@ static void
 search_bar_cancel_callback (GtkWidget *widget,
 			    NautilusNavigationWindowPane *pane)
 {
-	if (nautilus_navigation_window_pane_hide_temporary_bars (pane)) {
-		restore_focus_widget (NAUTILUS_NAVIGATION_WINDOW (NAUTILUS_WINDOW_PANE (pane)->window));
+	if ( nautilus_navigation_window_pane_hide_temporary_bars (pane)) {
+		nautilus_navigation_window_restore_focus_widget (NAUTILUS_NAVIGATION_WINDOW (NAUTILUS_WINDOW_PANE (pane)->window));
 	}
 }
 
@@ -236,7 +222,7 @@ navigation_bar_cancel_callback (GtkWidget *widget,
 				NautilusNavigationWindowPane *pane)
 {
 	if (nautilus_navigation_window_pane_hide_temporary_bars (pane)) {
-		restore_focus_widget (NAUTILUS_NAVIGATION_WINDOW (NAUTILUS_WINDOW_PANE (pane)->window));
+		nautilus_navigation_window_restore_focus_widget (NAUTILUS_NAVIGATION_WINDOW (NAUTILUS_WINDOW_PANE (pane)->window));
 	}
 }
 
@@ -248,7 +234,7 @@ navigation_bar_location_changed_callback (GtkWidget *widget,
 	GFile *location;
 	
 	if (nautilus_navigation_window_pane_hide_temporary_bars (pane)) {
-		restore_focus_widget (NAUTILUS_NAVIGATION_WINDOW (NAUTILUS_WINDOW_PANE (pane)->window));
+		nautilus_navigation_window_restore_focus_widget (NAUTILUS_NAVIGATION_WINDOW (NAUTILUS_WINDOW_PANE (pane)->window));
 	}
 
 	location = g_file_new_for_uri (uri);
@@ -820,13 +806,17 @@ nautilus_navigation_window_pane_setup_location_bar (NautilusNavigationWindowPane
 	gtk_container_add (GTK_CONTAINER (item),  hbox);
 	gtk_toolbar_insert (GTK_TOOLBAR (location_bar),
 			    item, -1);
-	
-	pane->location_button = location_button_create (pane);
 
+	pane->navigation_group = gtk_size_group_new (GTK_SIZE_GROUP_VERTICAL);
+	gtk_size_group_set_ignore_hidden (pane->navigation_group, FALSE);
+
+	pane->location_button = location_button_create (pane);
+	gtk_size_group_add_widget (pane->navigation_group, pane->location_button);
 	gtk_box_pack_start (GTK_BOX (hbox), pane->location_button, FALSE, FALSE, 0);
 	gtk_widget_show (pane->location_button);
 
 	pane->path_bar = g_object_new (NAUTILUS_TYPE_PATH_BAR, NULL);
+	gtk_size_group_add_widget (pane->navigation_group, pane->path_bar);
  	gtk_widget_show (pane->path_bar);
 	
 	g_signal_connect_object (pane->path_bar, "path_clicked",
@@ -839,6 +829,7 @@ nautilus_navigation_window_pane_setup_location_bar (NautilusNavigationWindowPane
 			    TRUE, TRUE, 0);
 
 	pane->navigation_bar = nautilus_location_bar_new (pane);
+	gtk_size_group_add_widget (pane->navigation_group, pane->navigation_bar);
 	g_signal_connect_object (pane->navigation_bar, "location_changed",
 				 G_CALLBACK (navigation_bar_location_changed_callback), pane, 0);
 	g_signal_connect_object (pane->navigation_bar, "cancel",
@@ -852,6 +843,7 @@ nautilus_navigation_window_pane_setup_location_bar (NautilusNavigationWindowPane
 			    TRUE, TRUE, 0);
 
 	pane->search_bar = nautilus_search_bar_new ();
+	gtk_size_group_add_widget (pane->navigation_group, pane->search_bar);
 	g_signal_connect_object (pane->search_bar, "activate",
 				 G_CALLBACK (search_bar_activate_callback), pane, 0);
 	g_signal_connect_object (pane->search_bar, "cancel",
@@ -872,10 +864,9 @@ nautilus_navigation_window_pane_setup_location_bar (NautilusNavigationWindowPane
 	gtk_container_add (GTK_CONTAINER (item), view_as_menu_vbox);
 	gtk_toolbar_insert (GTK_TOOLBAR (location_bar),
 			    item, -1);
-    pane->view_as_combo_box_item = item;
+	pane->view_as_combo_box_item = item;
 	
 	pane->view_as_combo_box = gtk_combo_box_new_text ();
-    
 	gtk_combo_box_set_focus_on_click (GTK_COMBO_BOX (pane->view_as_combo_box), FALSE);
 	gtk_box_pack_end (GTK_BOX (view_as_menu_vbox), pane->view_as_combo_box, TRUE, FALSE, 0);
 	gtk_widget_show (pane->view_as_combo_box);

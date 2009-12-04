@@ -579,8 +579,6 @@ eel_background_set_color (EelBackground *background,
 		background->details->color = g_strdup (color);
 		
 		set_image_properties (background);
-
-		g_signal_emit (background, signals[APPEARANCE_CHANGED], 0);
 	}
 }
 
@@ -880,8 +878,10 @@ widget_style_set_cb (GtkWidget *widget, GtkStyle *previous_style, gpointer data)
 	EelBackground *background;
 	
 	background = EEL_BACKGROUND (data);
-	
-	eel_widget_queue_background_change (widget);
+
+	if (previous_style != NULL) {
+		eel_widget_queue_background_change (widget);
+	}
 }
 
 static void

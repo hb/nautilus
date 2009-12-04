@@ -1396,7 +1396,7 @@ report_delete_progress (CommonJob *job,
 
 	now = g_thread_gettime ();
 	if (transfer_info->last_report_time != 0 &&
-	    ABS (transfer_info->last_report_time - now) < 100 * NSEC_PER_MSEC) {
+	    ABS ((gint64)(transfer_info->last_report_time - now)) < 100 * NSEC_PER_MSEC) {
 		return;
 	}
 	transfer_info->last_report_time = now;
@@ -2820,7 +2820,7 @@ report_copy_progress (CopyMoveJob *copy_job,
 	now = g_thread_gettime ();
 	
 	if (transfer_info->last_report_time != 0 &&
-	    ABS (transfer_info->last_report_time - now) < 100 * NSEC_PER_MSEC) {
+	    ABS ((gint64)(transfer_info->last_report_time - now)) < 100 * NSEC_PER_MSEC) {
 		return;
 	}
 	transfer_info->last_report_time = now;
@@ -3852,7 +3852,6 @@ copy_move_file (CopyMoveJob *copy_job,
 	 * detect and report it at this level) */
 	if (test_dir_is_parent (dest_dir, src)) {
 		if (job->skip_all_error) {
-			g_error_free (error);
 			goto out;
 		}
 		
@@ -3886,7 +3885,6 @@ copy_move_file (CopyMoveJob *copy_job,
 	 */
 	if (test_dir_is_parent (src, dest)) {
 		if (job->skip_all_error) {
-			g_error_free (error);
 			goto out;
 		}
 		
@@ -4526,7 +4524,6 @@ move_file_prepare (CopyMoveJob *move_job,
 	 * detect and report it at this level) */
 	if (test_dir_is_parent (dest_dir, src)) {
 		if (job->skip_all_error) {
-			g_error_free (error);
 			goto out;
 		}
 		

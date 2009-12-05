@@ -1055,7 +1055,7 @@ static const GtkToggleActionEntry navigation_toggle_entries[] = {
   /* label, accelerator */   N_("Extra Pane"), "F3",
   /* tooltip */              N_("Open an extra folder view side-by-side"),
                              G_CALLBACK (action_split_view_callback),
-  /* is_active */            TRUE },
+  /* is_active */            FALSE },
 };
 
 void 

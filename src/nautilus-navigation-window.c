@@ -1405,6 +1405,13 @@ void nautilus_navigation_window_split_view_on (NautilusNavigationWindow *window)
     gtk_box_pack_start (GTK_BOX (vbox), pane->notebook,TRUE, TRUE, 0);
     gtk_widget_show(vbox);
 
+    /* pack zoom widgets into toolbar */
+    g_object_ref (pane->zoom_control_item);
+    gtk_container_remove (GTK_CONTAINER (pane->location_bar), GTK_WIDGET (pane->zoom_control_item));
+    idx = gtk_toolbar_get_n_items (GTK_TOOLBAR (window->details->toolbar));
+    gtk_toolbar_insert (GTK_TOOLBAR (window->details->toolbar), pane->zoom_control_item, idx-1);
+    g_object_unref (pane->zoom_control_item);
+
     /* pack view as combo box into toolbar */
     pane->view_as_combo_box_item_index = gtk_toolbar_get_item_index (GTK_TOOLBAR (pane->location_bar), pane->view_as_combo_box_item);
     g_object_ref (pane->view_as_combo_box_item);
@@ -1455,6 +1462,13 @@ void nautilus_navigation_window_split_view_on (NautilusNavigationWindow *window)
     /* listen when view is finally added */
     g_signal_connect_object (GTK_CONTAINER (NAUTILUS_WINDOW_PANE (pane)->active_slot->view_box), "add",
         G_CALLBACK (split_view_added_to_container_callback), pane, 0);
+
+    /* move zoom control of second pane to main toolbar, also */
+    g_object_ref (pane->zoom_control_item);
+    gtk_container_remove (GTK_CONTAINER (pane->location_bar), GTK_WIDGET (pane->zoom_control_item));
+    idx = gtk_toolbar_get_n_items (GTK_TOOLBAR (window->details->toolbar));
+    gtk_toolbar_insert (GTK_TOOLBAR (window->details->toolbar), pane->zoom_control_item, idx-1);
+    g_object_unref (pane->zoom_control_item);
     
     /* move view as combo box of second pane to main toolbar, also */
     g_object_ref (pane->view_as_combo_box_item);
@@ -1527,6 +1541,12 @@ void nautilus_navigation_window_split_view_off (NautilusNavigationWindow *window
 		      0,                                   0);
     nautilus_horizontal_splitter_pack2 (NAUTILUS_HORIZONTAL_SPLITTER (window->details->content_paned),
 					main_pane->notebook);
+
+    /* put zoom control back */
+    g_object_ref (main_pane->zoom_control_item);
+    gtk_container_remove (GTK_CONTAINER (window->details->toolbar), GTK_WIDGET (main_pane->zoom_control_item));
+    gtk_toolbar_insert (GTK_TOOLBAR (main_pane->location_bar), main_pane->zoom_control_item, -1);
+    g_object_unref (main_pane->zoom_control_item);
 
     /* put view as combo box back */
     g_object_ref (main_pane->view_as_combo_box_item);

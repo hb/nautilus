@@ -62,9 +62,11 @@ nautilus_navigation_window_pane_set_active (NautilusNavigationWindowPane *pane, 
 	/* view as combo box */
 	if (is_active) {
 		gtk_widget_show (GTK_WIDGET (pane->view_as_combo_box_item));
+		gtk_widget_show (GTK_WIDGET (pane->zoom_control_item));
 	}
 	else {
 		gtk_widget_hide (GTK_WIDGET (pane->view_as_combo_box_item));
+		gtk_widget_hide (GTK_WIDGET (pane->zoom_control_item));
 	}
 
 	/* location button */
@@ -900,6 +902,7 @@ nautilus_navigation_window_pane_setup_location_bar (NautilusNavigationWindowPane
 	gtk_container_add (GTK_CONTAINER (item),  pane->zoom_control);
 	gtk_toolbar_insert (GTK_TOOLBAR (location_bar),
 			    item, 1);
+	pane->zoom_control_item = item;
 }
 
 void

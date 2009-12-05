@@ -56,6 +56,7 @@ struct _NautilusNavigationWindowPane {
     GtkWidget *path_bar;
     GtkWidget *search_bar;
     GtkWidget *zoom_control;
+    GtkToolItem *zoom_control_item;
 
     gboolean temporary_navigation_bar;
     gboolean temporary_location_bar;

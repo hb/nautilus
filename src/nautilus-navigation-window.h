@@ -110,4 +110,9 @@ void     nautilus_navigation_window_set_search_button	  (NautilusNavigationWindo
 							   gboolean		    state);
 void     nautilus_navigation_window_restore_focus_widget (NautilusNavigationWindow *window);
 
+inline gboolean nautilus_navigation_window_is_in_temporary_navigation_bar (GtkWidget *widget,
+				NautilusNavigationWindow *window);
+inline gboolean nautilus_navigation_window_is_in_temporary_search_bar (GtkWidget *widget,
+			    NautilusNavigationWindow *window);
+
 #endif

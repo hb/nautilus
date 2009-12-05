@@ -50,7 +50,6 @@ struct _NautilusNavigationWindowPane {
     GtkWidget *location_button;
     GtkWidget *view_as_combo_box;
     GtkToolItem *view_as_combo_box_item;
-    gint view_as_combo_box_item_index;
     GtkSizeGroup *navigation_group;
     GtkWidget *navigation_bar;
     GtkWidget *path_bar;

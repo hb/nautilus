@@ -1413,7 +1413,6 @@ void nautilus_navigation_window_split_view_on (NautilusNavigationWindow *window)
     g_object_unref (pane->zoom_control_item);
 
     /* pack view as combo box into toolbar */
-    pane->view_as_combo_box_item_index = gtk_toolbar_get_item_index (GTK_TOOLBAR (pane->location_bar), pane->view_as_combo_box_item);
     g_object_ref (pane->view_as_combo_box_item);
     gtk_container_remove (GTK_CONTAINER (pane->location_bar), GTK_WIDGET (pane->view_as_combo_box_item));
     idx = gtk_toolbar_get_n_items (GTK_TOOLBAR (window->details->toolbar));
@@ -1472,7 +1471,6 @@ void nautilus_navigation_window_split_view_on (NautilusNavigationWindow *window)
     
     /* move view as combo box of second pane to main toolbar, also */
     g_object_ref (pane->view_as_combo_box_item);
-    pane->view_as_combo_box_item_index = gtk_toolbar_get_item_index (GTK_TOOLBAR (pane->location_bar), pane->view_as_combo_box_item);
     gtk_container_remove (GTK_CONTAINER (pane->location_bar), GTK_WIDGET (pane->view_as_combo_box_item));
     idx = gtk_toolbar_get_n_items (GTK_TOOLBAR (window->details->toolbar));
     gtk_toolbar_insert (GTK_TOOLBAR (window->details->toolbar), pane->view_as_combo_box_item, idx-1);

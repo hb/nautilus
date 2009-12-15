@@ -1,3 +1,15 @@
+Major changes in 2.28.4 are:
+* Fix bug in trash/delete key sensitivity fix that could cause
+  data loss. (Files where trashed when you renamed a file and
+  pressed delete.)
+* Fix uninitialized variable read
+
+Major changes in 2.28.3 are:
+* Fix memory leaks
+* Don't rewrite bookmars unnecessary on startup
+* Fix background "darkness" detection for font color
+* Disable trash/delete key shortcuts when menu items disabled
+
 Major changes in 2.28.2 are:
 * Translation updates
 * Tracker: more robust for failure

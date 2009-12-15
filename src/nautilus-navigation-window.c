@@ -845,6 +845,7 @@ real_sync_search_widgets (NautilusWindow *window)
 		pane->temporary_search_bar = TRUE;
 		nautilus_navigation_window_hide_temporary_bars (navigation_window);
 	}
+	nautilus_directory_unref (directory);
 }
 
 

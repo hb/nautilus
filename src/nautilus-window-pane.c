@@ -654,6 +654,9 @@ nautilus_window_pane_constructed (GObject *obj)
 	/* build the toolbar */
 	action_group = nautilus_window_create_toolbar_action_group (window);
 	pane->tool_bar = nautilus_toolbar_new (action_group);
+	g_object_bind_property (window, "disable-chrome",
+				pane->tool_bar, "visible",
+				G_BINDING_INVERT_BOOLEAN);
 	pane->action_group = action_group;
 
 	setup_search_action (pane);

@@ -1,0 +1,36 @@
+How to sync the file-management branch with master
+==================================================
+
+merged-fm : tag until which the file-management branch has been synced
+
+To perform a new sync, do the following:
+========================================
+
+git co -b tmp file-management
+git tag target-fm <sha>
+git branch -f file-management target-fm
+
+git rebase -i --onto tmp merged-fm file-management
+# drop commits, solve merge commits, etc
+# when modifying commits, mark as follows in the commit msg:
+# Modified by Firstname Lastname <email@address> for the file-management branch
+
+git co file-management
+git br -D tmp
+git tag -f merged-fm target-fm
+git tag -d target-fm
+
+
+
+Misc tipps:
+===========
+
+It's advisable to turn git rerere support on.
+git config rerere.enabled 1
+
+To list commits that have been left out during a sync (includes modified commits):
+git log --left-only --cherry-pick merged-fm...file-management
+
+To list commits that have been newly introduced in the file-management branch:
+git log --right-only --cherry-pick merged-fm...file-management
+
